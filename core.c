@@ -40,13 +40,19 @@ static int fth_words(ForthState *pForth)
 
 	while (pIter)
 	{
-		forth_printf(pForth, "%s\n", pIter->name);
-	
-		// TODO - add word meta-data
-//		pForth->forth_print("\n");
+		if (!pIter->flags.hidden)
+		{
+			forth_printf(pForth, "%s ", pIter->name);
+
+			// add word meta-data
+			if (pIter->flags.immediate)
+				pForth->forth_print("[immediate]");
+
+			pForth->forth_print("\n");
+			count++;
+		}
 
 		pIter = pIter->next;
-		count++;
 	}
 
 	forth_printf(pForth, "\nThere are %d WORDS in the dictionary.\n", count);

@@ -36,6 +36,14 @@
 *.x86_64
 *.hex
 
+# Project files
+*.vcxproj.*
+*.VC.*
+
+# Output files
+Debug/
+.vs/
+
 # Debug files
 *.dSYM/
 *.su

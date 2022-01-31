@@ -6,6 +6,7 @@
 
 #define FTH_ENV_SIZE 4096
 #define FTH_STACK_SIZE 1024
+#define FTH_RETURN_STACK_SIZE 1024
 
 //
 #define FTH_MAX_WORD 256
@@ -13,11 +14,16 @@
 // Sets the limit for the length of a firth_printf result
 #define FTH_MAX_PRINTF_SIZE 512
 
+// value to set for uninitialized variables
+#define FTH_UNINITIALIZED 0
+
+typedef int ForthNumber;
+
 //
 typedef unsigned char BYTE;
 typedef unsigned char bool;
-bool true = ~0;
-bool false = 0;
+extern bool true;
+extern bool false;
 
 // type for custom output functions
 typedef void(*ForthOutputFunc)(char*);
@@ -28,30 +34,46 @@ typedef int (*ForthFunc)(ForthState *pForth);
 typedef struct DictionaryEntry DictionaryEntry;
 
 //
-#pragma pack(1)
+typedef struct
+{
+	unsigned int immediate : 1;
+	unsigned int hidden : 1;
+	unsigned int compile_only : 1;
+	unsigned int colon_word : 1;
+	unsigned int xt_on_stack : 1;
+	unsigned int unused : 27;
+} WordFlags;
+
+//
+#pragma pack(push, 1)
 struct DictionaryEntry
 {
 	DictionaryEntry *next;
 	ForthFunc code_pointer;
+	WordFlags flags;
 	unsigned char name_len;
 	char name[];
 };
+#pragma pack(pop)
 
 //
 struct ForthState
 {
-	BYTE *IP;
-	BYTE *CP;
-	DictionaryEntry *head;
-	BYTE *dictionary_base;
+	int *IP;				// interpreter pointer
+	BYTE *CP;				// dictionary pointer
+	DictionaryEntry *head;	// head of dictionary linked list
+	BYTE *dictionary_base;	// 
 
-	int *stack;
-	int *TOS;
-	char TIB[FTH_MAX_WORD];
-	char *IN;
+	ForthNumber *stack;		// bottom of stack
+	ForthNumber *SP;		// top of stack pointer
+
+	int *return_stack;
+	int *RP;
+
+	char TIB[FTH_MAX_WORD];	// text input buffer
+	char *IN;				// input pointer
 
 	ForthOutputFunc forth_print;
-	DictionaryEntry *current_word;
 	BYTE halted;
 	bool compiling;
 };
@@ -63,7 +85,7 @@ typedef struct
 	ForthFunc func;
 } ForthWordSet;
 
-//
+// Public Forth functions
 ForthState *fth_create_state();
 int fth_delete_state(ForthState*);
 
@@ -73,10 +95,18 @@ int fth_create(ForthState *pForth);
 
 int fth_push(ForthState *pForth, int val);
 int fth_pop(ForthState *pForth);
-int fth_set_output_function(ForthState *pForth, ForthOutputFunc f);
+int fth_peek(ForthState *pForth);
 
-int fth_register_wordset(ForthState *pForth, const ForthWordSet words[]);
+int fth_set_output_function(ForthState *pForth, ForthOutputFunc f);
+void forth_printf(ForthState *pForth, char *format, ...);
+
 int fth_interpret(ForthState *pForth);
 
+int fth_register_wordset(ForthState *pForth, const ForthWordSet words[]);
 int fth_register_core_wordset(ForthState *pForth);
-void forth_printf(ForthState *pForth, char *format, ...);
+
+int fth_make_compile_only(ForthState* pForth, char *word);
+int fth_make_immediate(ForthState* pForth, char *word);
+int fth_make_hidden(ForthState* pForth, char *word);
+int fth_make_xt_required(ForthState* pForth, char *word);
+
