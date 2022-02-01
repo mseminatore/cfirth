@@ -47,6 +47,10 @@ static int fth_words(ForthState *pForth)
 			// add word meta-data
 			if (pIter->flags.immediate)
 				pForth->forth_print("[immediate]");
+			if (pIter->flags.colon_word)
+				pForth->forth_print("[colon word]");
+			if (pIter->flags.compile_only)
+				pForth->forth_print("[compile only]");
 
 			pForth->forth_print("\n");
 			count++;

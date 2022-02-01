@@ -12,6 +12,8 @@
 bool true = ~0;
 bool false = 0;
 
+static DictionaryEntry *fth_tick_internal(ForthState *pForth, char *word);
+
 //
 static void forth_default_output(char *s)
 {
@@ -146,6 +148,13 @@ static int fth_word(ForthState *pForth)
 // create a new empty dictionary entry withe name given by word
 static int fth_make_dict_entry(ForthState *pForth, char *word)
 {
+	// see if the word already exists and if so warn about it
+	DictionaryEntry *pEntry = (DictionaryEntry*)fth_tick_internal(pForth, word);
+	if (pEntry)
+	{
+		pForth->forth_print("Note: redefining an existing word!\n");
+	}
+
 	DictionaryEntry *pNewHead = (DictionaryEntry *)pForth->CP;
 	pNewHead->code_pointer = NULL;
 	pNewHead->next = pForth->head;
@@ -470,6 +479,31 @@ static int fth_depth(ForthState *pForth)
 	return FTH_TRUE;
 }
 
+// execute a marker to reset dictionary state
+static int fth_marker_imp(ForthState *pForth)
+{
+	DictionaryEntry *xt = (DictionaryEntry*)fth_pop(pForth);
+
+	// reset dictionary head
+	pForth->head = xt->next;
+
+	// reset CP
+	pForth->CP = (BYTE*)xt;
+	return FTH_TRUE;
+}
+
+// create a state marker in the dictionary
+static int fth_marker(ForthState *pForth)
+{
+	// create a new dictionary entry for this marker
+	fth_create(pForth);
+
+	pForth->head->code_pointer = fth_marker_imp;
+	pForth->head->flags.xt_on_stack = 1;
+
+	return FTH_TRUE;
+}
+
 //
 //
 // Note: Since word lookup is O(n) on dictionary size
@@ -477,6 +511,7 @@ static int fth_depth(ForthState *pForth)
 static const ForthWordSet basic_lib[] =
 {
 	{ "EXECUTE", fth_execute },
+	{ "MARKER", fth_marker },
 	{ "INTERPRET", fth_interpret },
 	{ "NUMBER", fth_number },
 	{ "'", fth_tick },
@@ -572,7 +607,6 @@ ForthState *fth_create_state()
 	fth_make_compile_only(pForth, ";");
 
 	// setup defining words
-//	fth_make_xt_required(pForth, ":");
 
 	// setup hidden words
 
@@ -642,7 +676,7 @@ int fth_peek(ForthState *pForth)
 	return *(pForth->SP-1);
 }
 
-//
+// outer interpreter
 int fth_interpret(ForthState *pForth)
 {
 	pForth->forth_print("forth>");
