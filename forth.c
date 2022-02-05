@@ -229,6 +229,17 @@ static int fth_var_imp(ForthState *pForth)
 	return FTH_TRUE;
 }
 
+//
+static int fth_user_var_imp(ForthState *pForth)
+{
+	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pForth);
+
+	int **ppVar = (int)fth_body(pForth, pDict);
+	fth_push(pForth, *ppVar);
+
+	return FTH_TRUE;
+}
+
 // create a CONSTANT word
 static int fth_const(ForthState *pForth)
 {
@@ -256,7 +267,7 @@ static int fth_var(ForthState *pForth)
 	pForth->head->code_pointer = fth_var_imp;
 	pForth->head->flags.xt_on_stack = 1;
 
-	// store constant value in dictionary
+	// store value in dictionary
 	fth_write_to_cp(pForth, FTH_UNINITIALIZED);
 
 	return FTH_TRUE;
@@ -803,6 +814,34 @@ int fth_peek(ForthState *pForth)
 	}
 
 	return *(pForth->SP-1);
+}
+
+//
+int fth_define_word_const(ForthState *pForth, const char *name, ForthNumber val)
+{
+	fth_make_dict_entry(pForth, name);
+
+	pForth->head->code_pointer = fth_const_imp;
+	pForth->head->flags.xt_on_stack = 1;
+
+	// store constant value in dictionary
+	fth_write_to_cp(pForth, val);
+
+	return FTH_TRUE;
+}
+
+//
+int fth_define_word_var(ForthState *pForth, const char *name, ForthNumber *pVar)
+{
+	fth_make_dict_entry(pForth, name);
+
+	pForth->head->code_pointer = fth_user_var_imp;
+	pForth->head->flags.xt_on_stack = 1;
+
+	// store var pointer in dictionary
+	fth_write_to_cp(pForth, pVar);
+
+	return FTH_TRUE;
 }
 
 //

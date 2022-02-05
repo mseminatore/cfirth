@@ -101,7 +101,7 @@ int fth_peek(ForthState *pForth);
 int fth_set_output_function(ForthState *pForth, ForthOutputFunc f);
 void forth_printf(ForthState *pForth, char *format, ...);
 
-int fth_interpret(ForthState *pForth);
+//int fth_interpret(ForthState *pForth);
 int fth_quit(ForthState *pForth);
 
 int fth_register_wordset(ForthState *pForth, const ForthWordSet words[]);
@@ -112,3 +112,5 @@ int fth_make_immediate(ForthState* pForth, char *word);
 int fth_make_hidden(ForthState* pForth, char *word);
 int fth_make_xt_required(ForthState* pForth, char *word);
 
+int fth_define_word_const(ForthState*, const char *name, ForthNumber val);
+int fth_define_word_var(ForthState*, const char *name, ForthNumber *pVar);
