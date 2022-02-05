@@ -67,11 +67,12 @@ struct ForthState
 	ForthNumber *stack;		// bottom of stack
 	ForthNumber *SP;		// top of stack pointer
 
-	int *return_stack;
-	int *RP;
+	ForthNumber *return_stack;
+	ForthNumber *RP;
 
 	char TIB[FTH_MAX_WORD];	// text input buffer
 	char *IN;				// input pointer
+	ForthNumber tib_len;	// length of input
 
 	ForthOutputFunc forth_print;
 	BYTE halted;
@@ -93,14 +94,15 @@ int fth_tick(ForthState *pForth);
 int fth_word(ForthState *pForth);
 int fth_create(ForthState *pForth);
 
-int fth_push(ForthState *pForth, int val);
-int fth_pop(ForthState *pForth);
+int fth_push(ForthState *pForth, ForthNumber val);
+ForthNumber fth_pop(ForthState *pForth);
 int fth_peek(ForthState *pForth);
 
 int fth_set_output_function(ForthState *pForth, ForthOutputFunc f);
 void forth_printf(ForthState *pForth, char *format, ...);
 
 int fth_interpret(ForthState *pForth);
+int fth_quit(ForthState *pForth);
 
 int fth_register_wordset(ForthState *pForth, const ForthWordSet words[]);
 int fth_register_core_wordset(ForthState *pForth);

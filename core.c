@@ -2,7 +2,7 @@
 
 #include "forth.h"
 
-//
+// implements BYTE
 static int fth_bye(ForthState *pForth)
 {
 	pForth->halted = 1;
@@ -10,7 +10,7 @@ static int fth_bye(ForthState *pForth)
 	return FTH_TRUE;
 }
 
-// print out the TOS
+// implements '.' - print out the TOS
 static int fth_dot(ForthState *pForth)
 {
 	int n = fth_pop(pForth);
@@ -19,22 +19,12 @@ static int fth_dot(ForthState *pForth)
 	return FTH_TRUE;
 }
 
-// implement the COMMA word
-static int fth_comma(ForthState *pForth)
-{
-	// get TOS
-	int n = fth_pop(pForth);
-
-	*pForth->CP = n;
-	pForth->CP += sizeof(n);
-
-	return FTH_TRUE;
-}
-
-//
+// implements WORDS
 static int fth_words(ForthState *pForth)
 {
 	int count = 0;
+
+	pForth->forth_print("\n");
 
 	DictionaryEntry *pIter = pForth->head;
 
@@ -46,11 +36,11 @@ static int fth_words(ForthState *pForth)
 
 			// add word meta-data
 			if (pIter->flags.immediate)
-				pForth->forth_print("[immediate]");
+				pForth->forth_print("[immediate] ");
 			if (pIter->flags.colon_word)
-				pForth->forth_print("[colon word]");
+				pForth->forth_print("[colon word] ");
 			if (pIter->flags.compile_only)
-				pForth->forth_print("[compile only]");
+				pForth->forth_print("[compile only] ");
 
 			pForth->forth_print("\n");
 			count++;
@@ -68,7 +58,7 @@ static int fth_words(ForthState *pForth)
 static int fth_emit(ForthState *pForth)
 {
 	int n = fth_pop(pForth);
-	forth_printf(pForth, "%c ", (char)n);
+	forth_printf(pForth, "%c", (char)n);
 	return FTH_TRUE;
 }
 
@@ -130,7 +120,7 @@ static int fth_swap(ForthState *pForth)
 	
 	fth_push(pForth, a);
 	
-	return fth_push(pForth, a);
+	return fth_push(pForth, b);
 }
 
 // drop ( n -- )
@@ -177,7 +167,6 @@ static const ForthWordSet core_lib[] =
 {
 	{ "BYE", fth_bye },
 	{ ".", fth_dot },
-	{ ",", fth_comma },
 	{ "WORDS", fth_words },
 	{ "EMIT",  fth_emit },
 

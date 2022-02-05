@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	// REPL
 	while (!pForth->halted)
 	{
-		fth_interpret(pForth);
+		fth_quit(pForth);
 	}
 
 	// we're done, cleanup and quit
