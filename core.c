@@ -254,6 +254,14 @@ static int fth_xor(ForthState *pForth)
 }
 
 //
+static int fth_mod(ForthState *pForth)
+{
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
+	return fth_push(pForth, n1 % n2);
+}
+
+//
 //static int fth_xxx(ForthState *pForth)
 //{
 //	ForthNumber n = fth_pop(pForth);
@@ -274,6 +282,8 @@ static const ForthWordSet core_lib[] =
 	{ "*",  fth_mul },
 	{ "/",  fth_div },
 
+	{ "MOD", fth_mod },
+
 	// relational
 	{ "=", fth_equal },
 	{ "<>", fth_not_equal },
@@ -285,6 +295,7 @@ static const ForthWordSet core_lib[] =
 	{ "0>", fth_greater_than_zero },
 	{ "0<", fth_less_than_zero },
 
+	// bitwise
 	{ "AND", fth_and },
 	{ "OR", fth_or },
 	{ "NOT", fth_not },
