@@ -105,6 +105,7 @@ void forth_printf(ForthState *pForth, char *format, ...);
 int fth_quit(ForthState *pForth);
 
 int fth_register_wordset(ForthState *pForth, const ForthWordSet words[]);
+static int fth_xxx(ForthState * pForth);
 int fth_register_core_wordset(ForthState *pForth);
 
 int fth_make_compile_only(ForthState* pForth, char *word);

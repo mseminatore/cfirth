@@ -13,7 +13,7 @@ static int fth_bye(ForthState *pForth)
 // implements '.' - print out the TOS
 static int fth_dot(ForthState *pForth)
 {
-	int n = fth_pop(pForth);
+	ForthNumber n = fth_pop(pForth);
 
 	forth_printf(pForth, "%d ", n);
 	return FTH_TRUE;
@@ -57,7 +57,7 @@ static int fth_words(ForthState *pForth)
 //
 static int fth_emit(ForthState *pForth)
 {
-	int n = fth_pop(pForth);
+	ForthNumber n = fth_pop(pForth);
 	forth_printf(pForth, "%c", (char)n);
 	return FTH_TRUE;
 }
@@ -65,47 +65,47 @@ static int fth_emit(ForthState *pForth)
 //
 static int fth_plus(ForthState *pForth)
 {
-	int b = fth_pop(pForth);
-	int a = fth_pop(pForth);
+	ForthNumber b = fth_pop(pForth);
+	ForthNumber a = fth_pop(pForth);
 	return fth_push(pForth, a + b);
 }
 
 //
 static int fth_minus(ForthState *pForth)
 {
-	int b = fth_pop(pForth);
-	int a = fth_pop(pForth);
+	ForthNumber b = fth_pop(pForth);
+	ForthNumber a = fth_pop(pForth);
 	return fth_push(pForth, a - b);
 }
 
 //
 static int fth_mul(ForthState *pForth)
 {
-	int b = fth_pop(pForth);
-	int a = fth_pop(pForth);
+	ForthNumber b = fth_pop(pForth);
+	ForthNumber a = fth_pop(pForth);
 	return fth_push(pForth, a * b);
 }
 
 //
 static int fth_div(ForthState *pForth)
 {
-	int b = fth_pop(pForth);
-	int a = fth_pop(pForth);
+	ForthNumber b = fth_pop(pForth);
+	ForthNumber a = fth_pop(pForth);
 	return fth_push(pForth, a / b);
 }
 
 // fetch value at addr on TOS
 static int fth_fetch(ForthState *pForth)
 {
-	int *pInt = (int*)fth_pop(pForth);
+	ForthNumber *pInt = (ForthNumber*)fth_pop(pForth);
 	return fth_push(pForth, *pInt);
 }
 
 // ( n addr -- )
 static int fth_store(ForthState *pForth)
 {
-	int *pInt = (int*)fth_pop(pForth);
-	int val = fth_pop(pForth);
+	ForthNumber *pInt = (ForthNumber*)fth_pop(pForth);
+	ForthNumber val = fth_pop(pForth);
 
 	*pInt = val;
 
@@ -115,8 +115,8 @@ static int fth_store(ForthState *pForth)
 //
 static int fth_swap(ForthState *pForth)
 {
-	int a = fth_pop(pForth);
-	int b = fth_pop(pForth);
+	ForthNumber a = fth_pop(pForth);
+	ForthNumber b = fth_pop(pForth);
 	
 	fth_push(pForth, a);
 	
@@ -132,7 +132,7 @@ static int fth_drop(ForthState *pForth)
 // dup ( n -- n n )
 static int fth_dup(ForthState *pForth)
 {
-	int a = fth_pop(pForth);
+	ForthNumber a = fth_pop(pForth);
 	fth_push(pForth, a);
 
 	return fth_push(pForth, a);
@@ -141,9 +141,9 @@ static int fth_dup(ForthState *pForth)
 // rot (n1 n2 n3 -- n2 n3 n1)
 static int fth_rot(ForthState *pForth)
 {
-	int n3 = fth_pop(pForth);
-	int n2 = fth_pop(pForth);
-	int n1 = fth_pop(pForth);
+	ForthNumber n3 = fth_pop(pForth);
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
 
 	fth_push(pForth, n2);
 	fth_push(pForth, n3);
@@ -154,13 +154,111 @@ static int fth_rot(ForthState *pForth)
 // over ( n1 n2 -- n1 n2 n1 )
 static int fth_over(ForthState *pForth)
 {
-	int n2 = fth_pop(pForth);
-	int n1 = fth_pop(pForth);
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
 	
 	fth_push(pForth, n1);
 	fth_push(pForth, n2);
 	return fth_push(pForth, n1);
 }
+
+//
+static int fth_equal(ForthState *pForth)
+{
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
+	return fth_push(pForth, n1 == n2 ? FTH_TRUE : FTH_FALSE);
+}
+
+//
+static int fth_not_equal(ForthState *pForth)
+{
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
+	return fth_push(pForth, n1 != n2 ? FTH_TRUE : FTH_FALSE);
+}
+
+//
+static int fth_greater_than(ForthState *pForth)
+{
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
+	return fth_push(pForth, n1 > n2 ? FTH_TRUE : FTH_FALSE);
+}
+
+//
+static int fth_less_than(ForthState *pForth)
+{
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
+	return fth_push(pForth, n1 < n2 ? FTH_TRUE : FTH_FALSE);
+}
+
+//
+static int fth_equal_zero(ForthState *pForth)
+{
+	ForthNumber n = fth_pop(pForth);
+	return fth_push(pForth, n == 0 ? FTH_TRUE : FTH_FALSE);
+}
+
+//
+static int fth_not_equal_zero(ForthState *pForth)
+{
+	ForthNumber n = fth_pop(pForth);
+	return fth_push(pForth, n != 0 ? FTH_TRUE : FTH_FALSE);
+}
+
+//
+static int fth_less_than_zero(ForthState *pForth)
+{
+	ForthNumber n = fth_pop(pForth);
+	return fth_push(pForth, n < 0 ? FTH_TRUE : FTH_FALSE);
+}
+
+
+static int fth_greater_than_zero(ForthState *pForth)
+{
+	ForthNumber n = fth_pop(pForth);
+	return fth_push(pForth, n > 0 ? FTH_TRUE : FTH_FALSE);
+}
+
+//
+static int fth_and(ForthState *pForth)
+{
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
+	return fth_push(pForth, n1 & n2);
+}
+
+//
+static int fth_or(ForthState *pForth)
+{
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
+	return fth_push(pForth, n1 | n2);
+}
+
+//
+static int fth_not(ForthState *pForth)
+{
+	ForthNumber n = fth_pop(pForth);
+	return fth_push(pForth, !n);
+}
+
+//
+static int fth_xor(ForthState *pForth)
+{
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
+	return fth_push(pForth, n1 ^ n2);
+}
+
+//
+//static int fth_xxx(ForthState *pForth)
+//{
+//	ForthNumber n = fth_pop(pForth);
+//
+//}
 
 // register our collection of custom words
 static const ForthWordSet core_lib[] =
@@ -175,6 +273,22 @@ static const ForthWordSet core_lib[] =
 	{ "-",  fth_minus },
 	{ "*",  fth_mul },
 	{ "/",  fth_div },
+
+	// relational
+	{ "=", fth_equal },
+	{ "<>", fth_not_equal },
+	{ ">", fth_greater_than },
+	{ "<", fth_less_than },
+
+	{ "0=", fth_equal_zero },
+	{ "0<>", fth_not_equal_zero },
+	{ "0>", fth_greater_than_zero },
+	{ "0<", fth_less_than_zero },
+
+	{ "AND", fth_and },
+	{ "OR", fth_or },
+	{ "NOT", fth_not },
+	{ "XOR", fth_xor },
 
 	// variables
 	{ "@", fth_fetch },
