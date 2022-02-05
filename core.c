@@ -24,7 +24,7 @@ static int fth_words(ForthState *pForth)
 {
 	int count = 0;
 
-	pForth->forth_print("\n");
+	pForth->forth_print("\nDictionary Listing...\n");
 
 	DictionaryEntry *pIter = pForth->head;
 

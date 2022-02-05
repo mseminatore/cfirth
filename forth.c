@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <assert.h>
 
 #include "forth.h"
 
@@ -12,7 +13,7 @@
 bool true = ~0;
 bool false = 0;
 
-static DictionaryEntry *fth_tick_internal(ForthState *pForth, char *word);
+static DictionaryEntry *fth_tick_internal(ForthState *pForth, const char *word);
 
 //
 static void forth_default_output(char *s)
@@ -50,7 +51,7 @@ static int isInteger(const char *s)
 	return FTH_TRUE;
 }
 
-// given an xt get the 
+// given an xt get the data pointer
 static int* fth_body(ForthState *pforth, DictionaryEntry *xt)
 {
 	return (int*)(xt->name + xt->name_len + 1);
@@ -169,7 +170,7 @@ static int fth_word(ForthState *pForth)
 }
 
 // create a new empty dictionary entry withe name given by word
-static int fth_make_dict_entry(ForthState *pForth, char *word)
+static int fth_make_dict_entry(ForthState *pForth, const char *word)
 {
 	// see if the word already exists and if so warn about it
 	DictionaryEntry *pEntry = (DictionaryEntry*)fth_tick_internal(pForth, word);
@@ -234,8 +235,8 @@ static int fth_user_var_imp(ForthState *pForth)
 {
 	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pForth);
 
-	int **ppVar = (int)fth_body(pForth, pDict);
-	fth_push(pForth, *ppVar);
+	ForthNumber **ppVar = (ForthNumber**)fth_body(pForth, pDict);
+	fth_push(pForth, (ForthNumber)*ppVar);
 
 	return FTH_TRUE;
 }
@@ -299,7 +300,7 @@ static int fth_literal(ForthState *pForth)
 }
 
 //
-static DictionaryEntry *fth_tick_internal(ForthState *pForth, char *word)
+static DictionaryEntry *fth_tick_internal(ForthState *pForth, const char *word)
 {
 	DictionaryEntry *pDict = (DictionaryEntry*)pForth->head;
 
@@ -363,7 +364,7 @@ static int fth_address_interpreter(ForthState *pForth)
 
 		// if we are going to call a colon word, put the xt on the stack
 		if (pNextWord->flags.colon_word)
-			fth_push(pForth, pNextWord);
+			fth_push(pForth, (ForthNumber)pNextWord);
 
 		ForthFunc f = (ForthFunc)pNextWord->code_pointer;
 		f(pForth);
@@ -424,7 +425,7 @@ static int fth_compile(ForthState *pForth)
 		}
 		else
 		{
-			char *input = fth_peek(pForth);
+			char *input = (char*)fth_peek(pForth);
 			if (isInteger(input))
 			{
 				DictionaryEntry *xt = fth_tick_internal(pForth, "LITERAL");
@@ -583,6 +584,18 @@ static int fth_comma(ForthState *pForth)
 	return fth_write_to_cp(pForth, n);
 }
 
+// implements BRANCH
+static int fth_branch(ForthState *pForth)
+{
+
+}
+
+// implements BRANCH?
+static int fth_conditional_branch(ForthState *pForth)
+{
+
+}
+
 //
 // Note: Since word lookup is currently O(n) on dictionary size
 // try to keep common words towards the bottom for speed
@@ -693,6 +706,11 @@ ForthState *fth_create_state()
 
 	// setup hidden words
 	/* none yet! */
+
+	// setup variables
+	fth_define_word_var(pForth, "CP", (ForthNumber*)&pForth->CP);
+	fth_define_word_var(pForth, "RP", (ForthNumber*)&pForth->RP);
+	fth_define_word_var(pForth, "SP", (ForthNumber*)&pForth->SP);
 
 	return pForth;
 }
@@ -839,18 +857,19 @@ int fth_define_word_var(ForthState *pForth, const char *name, ForthNumber *pVar)
 	pForth->head->flags.xt_on_stack = 1;
 
 	// store var pointer in dictionary
-	fth_write_to_cp(pForth, pVar);
+	fth_write_to_cp(pForth, (ForthNumber)pVar);
 
 	return FTH_TRUE;
 }
 
-//
+// the outer interpreter
 int fth_quit(ForthState *pForth)
 {
 	// show user prompt
 	pForth->forth_print("forth>");
 
-	// TODO - reset return stack
+	// TODO - reset return stack?
+	assert(pForth->RP == pForth->return_stack);
 
 	// fill input bufer
 	fth_push(pForth, (ForthNumber)pForth->TIB);
