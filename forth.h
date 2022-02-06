@@ -59,10 +59,12 @@ struct DictionaryEntry
 //
 struct ForthState
 {
-	int *IP;				// interpreter pointer
+	ForthNumber *IP;				// interpreter pointer
 	BYTE *CP;				// dictionary pointer
 	DictionaryEntry *head;	// head of dictionary linked list
 	BYTE *dictionary_base;	// beginning of dictionary memory
+
+	FILE *BLK;
 
 	ForthNumber hexmode;
 	ForthNumber maxr;

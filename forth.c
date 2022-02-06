@@ -121,7 +121,7 @@ static int fth_accept(ForthState *pForth)
 	char *p = (char*)addr;
 
 	// read at most limit characters from the input and store at addr
-	while ((c = getc(stdin)) != '\n' && count < limit)
+	while ((c = getc(pForth->BLK)) != '\n' && count < limit)
 	{
 		*p++ = c;
 		count++;
@@ -160,6 +160,9 @@ static int fth_word(ForthState *pForth)
 		p++;
 		c = *p;
 	}
+
+	if (c == EOF)
+		pForth->BLK = stdin;
 
 	// make word in TIB asciiz
 	*p = '\0';
@@ -591,13 +594,25 @@ static int fth_comma(ForthState *pForth)
 // implements BRANCH
 static int fth_branch(ForthState *pForth)
 {
-
+	// get addr
+	ForthNumber *addr = pForth->IP;
+	pForth->IP = *addr;
+	return FTH_TRUE;
 }
 
 // implements BRANCH?
 static int fth_conditional_branch(ForthState *pForth)
 {
+	ForthNumber n = fth_pop(pForth);
 
+	// branch if n == 0
+	if (0 == n)
+	{
+		ForthNumber addr = *pForth->IP;
+		pForth->IP = addr;
+	}
+	else
+		pForth->IP++;
 }
 
 // implements '('
@@ -616,6 +631,49 @@ static int fth_backslash(ForthState *pForth)
 	return fth_pop(pForth);
 }
 
+// implements LOAD
+static int fth_load(ForthState *pForth)
+{
+	// get the filename
+	fth_push(pForth, ' ');
+	fth_word(pForth);
+
+	char *filename = fth_pop(pForth);
+	FILE *f = fopen(filename, "rt");
+	pForth->BLK = f;
+	
+	return FTH_TRUE;
+}
+
+// implements R>
+static int fth_from_r(ForthState *pForth)
+{
+	ForthNumber n = fth_r_pop(pForth);
+	fth_push(pForth, n);
+}
+
+// implements >R
+static int fth_to_r(ForthState *pForth)
+{
+	ForthNumber n = fth_pop(pForth);
+	return fth_r_push(pForth, n);
+}
+
+// implements IF
+static int fth_if(ForthState *pForth)
+{
+	fth_write_to_cp(pForth, fth_tick_internal(pForth, "BRANCH?"));
+	fth_push(pForth, pForth->CP);
+	fth_write_to_cp(pForth, -1);
+}
+
+// implements THEN
+static int fth_then(ForthState *pForth)
+{
+	ForthNumber *addr = fth_pop(pForth);
+	*addr = pForth->CP;
+}
+
 // implements
 //static int fth_xxx(ForthState *pForth)
 //{
@@ -628,6 +686,14 @@ static int fth_backslash(ForthState *pForth)
 //
 static const ForthWordSet basic_lib[] =
 {
+	{ "BRANCH?", fth_conditional_branch },
+	{ "BRANCH", fth_branch },
+	{ "IF", fth_if },
+	{ "THEN", fth_then },
+
+	{ "R>", fth_from_r },
+	{ ">R", fth_to_r },
+	{ "LOAD", fth_load },
 	{ "EXECUTE", fth_execute },
 	{ "MARKER", fth_marker },
 	{ "INTERPRET", fth_quit},
@@ -654,7 +720,7 @@ static const ForthWordSet basic_lib[] =
 	{ ".S", fth_dots },
 
 	{ "KEY", fth_key },
-	{ "CELLS", fth_cells },
+//	{ "CELLS", fth_cells },
 	{ "ALLOT", fth_allot },
 
 	{ "(", fth_left_parens },
@@ -722,6 +788,8 @@ ForthState *fth_create_state()
 	pForth->maxr = 0;
 	pForth->maxs = 0;
 
+	pForth->BLK = stdin;
+
 	// register built-in words
 	fth_register_wordset(pForth, basic_lib);
 	fth_register_core_wordset(pForth);
@@ -730,6 +798,8 @@ ForthState *fth_create_state()
 	fth_make_immediate(pForth, ";");
 	fth_make_immediate(pForth, "[");
 	fth_make_immediate(pForth, "(");
+	fth_make_immediate(pForth, "IF");
+	fth_make_immediate(pForth, "THEN");
 
 	// setup compile only words
 	fth_make_compile_only(pForth, ";");
@@ -742,9 +812,9 @@ ForthState *fth_create_state()
 	/* none yet! */
 
 	// setup variables
-	fth_define_word_var(pForth, "CP", (ForthNumber*)&pForth->CP);
-	fth_define_word_var(pForth, "RP", (ForthNumber*)&pForth->RP);
-	fth_define_word_var(pForth, "SP", (ForthNumber*)&pForth->SP);
+	fth_define_word_var(pForth, "CP", (ForthNumber*)pForth->CP);
+	fth_define_word_var(pForth, "RP", (ForthNumber*)pForth->RP);
+	fth_define_word_var(pForth, "SP", (ForthNumber*)pForth->SP);
 
 	fth_define_word_var(pForth, "ENV.MAXS", (ForthNumber*)&pForth->maxs);
 	fth_define_word_var(pForth, "ENV.MAXR", (ForthNumber*)&pForth->maxr);
@@ -908,7 +978,8 @@ int fth_define_word_var(ForthState *pForth, const char *name, ForthNumber *pVar)
 int fth_quit(ForthState *pForth)
 {
 	// show user prompt
-	pForth->forth_print("forth>");
+	if (pForth->BLK == stdin)
+		pForth->forth_print("forth>");
 
 	// TODO - reset return stack?
 	assert(pForth->RP == pForth->return_stack);
@@ -942,7 +1013,8 @@ int fth_quit(ForthState *pForth)
 		}
 	}
 
-	pForth->forth_print(" ok\n");
+	if (pForth->BLK == stdin)
+		pForth->forth_print(" ok\n");
 	
 	return FTH_TRUE;
 }
