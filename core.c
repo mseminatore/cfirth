@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 
 #include "forth.h"
 
@@ -15,7 +16,11 @@ static int fth_dot(ForthState *pForth)
 {
 	ForthNumber n = fth_pop(pForth);
 
-	forth_printf(pForth, "%d ", n);
+	if (pForth->hexmode)
+		forth_printf(pForth, "0x%0X ", n);
+	else
+		forth_printf(pForth, "%d ", n);
+
 	return FTH_TRUE;
 }
 
@@ -262,6 +267,51 @@ static int fth_mod(ForthState *pForth)
 }
 
 //
+static int fth_div_mod(ForthState *pForth)
+{
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
+
+	fth_push(pForth, n1 % n2); // push rem
+	return fth_push(pForth, n1 / n2); // push quotient
+}
+
+//
+static int fth_mul_div(ForthState *pForth)
+{
+	ForthNumber n3 = fth_pop(pForth);
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
+
+	long long n4 = (long long)(n1) * n2;
+	return fth_push(pForth, (ForthNumber)(n4 / n3));
+}
+
+//
+static int fth_lshift(ForthState *pForth)
+{
+	ForthNumber shift = fth_pop(pForth);
+	ForthNumber num = fth_pop(pForth);
+	return fth_push(pForth, num << shift);
+}
+
+//
+static int fth_rshift(ForthState *pForth)
+{
+	ForthNumber shift = fth_pop(pForth);
+	ForthNumber num = fth_pop(pForth);
+	return fth_push(pForth, num >> shift);
+}
+
+//
+static int fth_pow(ForthState *pForth)
+{
+	ForthNumber n2 = fth_pop(pForth);
+	ForthNumber n1 = fth_pop(pForth);
+	return fth_push(pForth, (ForthNumber)(pow(n1, n2) + 0.5f));
+}
+
+//
 //static int fth_xxx(ForthState *pForth)
 //{
 //	ForthNumber n = fth_pop(pForth);
@@ -283,6 +333,8 @@ static const ForthWordSet core_lib[] =
 	{ "/",  fth_div },
 
 	{ "MOD", fth_mod },
+	{ "/MOD", fth_div_mod },
+	{ "*/", fth_mul_div },
 
 	// relational
 	{ "=", fth_equal },
@@ -300,6 +352,9 @@ static const ForthWordSet core_lib[] =
 	{ "OR", fth_or },
 	{ "NOT", fth_not },
 	{ "XOR", fth_xor },
+
+	{ "LSHIFT", fth_lshift },
+	{ "RSHIFT", fth_rshift },
 
 	// variables
 	{ "@", fth_fetch },

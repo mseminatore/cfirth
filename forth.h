@@ -5,8 +5,8 @@
 #define FTH_FALSE 0
 
 #define FTH_ENV_SIZE 4096
-#define FTH_STACK_SIZE 1024
-#define FTH_RETURN_STACK_SIZE 1024
+#define FTH_STACK_SIZE 512
+#define FTH_RETURN_STACK_SIZE 512
 
 //
 #define FTH_MAX_WORD 256
@@ -62,7 +62,11 @@ struct ForthState
 	int *IP;				// interpreter pointer
 	BYTE *CP;				// dictionary pointer
 	DictionaryEntry *head;	// head of dictionary linked list
-	BYTE *dictionary_base;	// 
+	BYTE *dictionary_base;	// beginning of dictionary memory
+
+	ForthNumber hexmode;
+	ForthNumber maxr;
+	ForthNumber maxs;
 
 	ForthNumber *stack;		// bottom of stack
 	ForthNumber *SP;		// top of stack pointer

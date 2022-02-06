@@ -69,6 +69,10 @@ static int fth_r_push(ForthState *pForth, ForthNumber val)
 
 	*pForth->RP++ = val;
 
+	ForthNumber depth = pForth->RP - pForth->return_stack;
+	if (depth > pForth->maxr)
+		pForth->maxr = depth;
+
 	return FTH_TRUE;
 }
 
@@ -534,9 +538,9 @@ static int fth_dots(ForthState *pForth)
 	pForth->forth_print("Top -> [ ");
 	while (s-- != pForth->stack)
 	{
-		//if (hexmode)
-		//	firth_printf("0x%0X ", s.top());
-		//else
+		if (pForth->hexmode)
+			forth_printf(pForth, "0x%0X ", *s);
+		else
 			forth_printf(pForth, "%d ", *s);
 	}
 	pForth->forth_print("]\n");
@@ -595,6 +599,12 @@ static int fth_conditional_branch(ForthState *pForth)
 {
 
 }
+
+// implements 
+//static int fth_xxx(ForthState *pForth)
+//{
+//
+//}
 
 //
 // Note: Since word lookup is currently O(n) on dictionary size
@@ -689,6 +699,10 @@ ForthState *fth_create_state()
 	pForth->IN = pForth->TIB;						// TODO - not yet used
 	pForth->compiling = false;						// start in interpreter mode
 
+	pForth->hexmode = 0;
+	pForth->maxr = 0;
+	pForth->maxs = 0;
+
 	// register built-in words
 	fth_register_wordset(pForth, basic_lib);
 	fth_register_core_wordset(pForth);
@@ -711,6 +725,10 @@ ForthState *fth_create_state()
 	fth_define_word_var(pForth, "CP", (ForthNumber*)&pForth->CP);
 	fth_define_word_var(pForth, "RP", (ForthNumber*)&pForth->RP);
 	fth_define_word_var(pForth, "SP", (ForthNumber*)&pForth->SP);
+
+	fth_define_word_var(pForth, "ENV.MAXS", (ForthNumber*)&pForth->maxs);
+	fth_define_word_var(pForth, "ENV.MAXR", (ForthNumber*)&pForth->maxr);
+	fth_define_word_var(pForth, "ENV.HEX", (ForthNumber*)&pForth->hexmode);
 
 	return pForth;
 }
@@ -804,6 +822,10 @@ int fth_push(ForthState *pForth, ForthNumber val)
 	}
 
 	*pForth->SP++ = val;
+
+	ForthNumber depth = pForth->SP - pForth->stack;
+	if (depth > pForth->maxs)
+		pForth->maxs = depth;
 
 	return FTH_TRUE;
 }
