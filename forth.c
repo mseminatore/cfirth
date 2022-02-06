@@ -596,7 +596,7 @@ static int fth_branch(ForthState *pForth)
 {
 	// get addr
 	ForthNumber *addr = pForth->IP;
-	pForth->IP = *addr;
+	pForth->IP = (ForthNumber*)*addr;
 	return FTH_TRUE;
 }
 
@@ -609,10 +609,12 @@ static int fth_conditional_branch(ForthState *pForth)
 	if (0 == n)
 	{
 		ForthNumber addr = *pForth->IP;
-		pForth->IP = addr;
+		pForth->IP = (ForthNumber*)addr;
 	}
 	else
 		pForth->IP++;
+
+	return FTH_TRUE;
 }
 
 // implements '('
@@ -638,7 +640,7 @@ static int fth_load(ForthState *pForth)
 	fth_push(pForth, ' ');
 	fth_word(pForth);
 
-	char *filename = fth_pop(pForth);
+	char *filename = (char*)fth_pop(pForth);
 	FILE *f = fopen(filename, "rt");
 	pForth->BLK = f;
 	
@@ -649,7 +651,7 @@ static int fth_load(ForthState *pForth)
 static int fth_from_r(ForthState *pForth)
 {
 	ForthNumber n = fth_r_pop(pForth);
-	fth_push(pForth, n);
+	return fth_push(pForth, n);
 }
 
 // implements >R
@@ -662,16 +664,33 @@ static int fth_to_r(ForthState *pForth)
 // implements IF
 static int fth_if(ForthState *pForth)
 {
-	fth_write_to_cp(pForth, fth_tick_internal(pForth, "BRANCH?"));
-	fth_push(pForth, pForth->CP);
+	fth_write_to_cp(pForth, (ForthNumber)fth_tick_internal(pForth, "BRANCH?"));
+	fth_push(pForth, (ForthNumber)pForth->CP);
 	fth_write_to_cp(pForth, -1);
+
+	return FTH_TRUE;
 }
 
 // implements THEN
 static int fth_then(ForthState *pForth)
 {
-	ForthNumber *addr = fth_pop(pForth);
-	*addr = pForth->CP;
+	ForthNumber *addr = (ForthNumber*)fth_pop(pForth);
+	*addr = (ForthNumber) pForth->CP;
+
+	return FTH_TRUE;
+}
+
+// implements ELSE
+static int fth_else(ForthState *pForth)
+{
+	ForthNumber *addr = (ForthNumber*)fth_pop(pForth);
+	fth_write_to_cp(pForth, (ForthNumber)fth_tick_internal(pForth, "BRANCH"));
+	fth_push(pForth, (ForthNumber)pForth->CP);
+	fth_write_to_cp(pForth, -1);
+
+	*addr = (ForthNumber)pForth->CP;
+	
+	return FTH_TRUE;
 }
 
 // implements
@@ -690,6 +709,7 @@ static const ForthWordSet basic_lib[] =
 	{ "BRANCH", fth_branch },
 	{ "IF", fth_if },
 	{ "THEN", fth_then },
+	{ "ELSE", fth_else },
 
 	{ "R>", fth_from_r },
 	{ ">R", fth_to_r },
@@ -800,6 +820,7 @@ ForthState *fth_create_state()
 	fth_make_immediate(pForth, "(");
 	fth_make_immediate(pForth, "IF");
 	fth_make_immediate(pForth, "THEN");
+	fth_make_immediate(pForth, "ELSE");
 
 	// setup compile only words
 	fth_make_compile_only(pForth, ";");
