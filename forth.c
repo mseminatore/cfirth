@@ -600,7 +600,23 @@ static int fth_conditional_branch(ForthState *pForth)
 
 }
 
-// implements 
+// implements '('
+static int fth_left_parens(ForthState *pForth)
+{
+	fth_push(pForth, ')');
+	fth_word(pForth);
+	return fth_pop(pForth);
+}
+
+// implements '\'
+static int fth_backslash(ForthState *pForth)
+{
+	fth_push(pForth, '\n');
+	fth_word(pForth);
+	return fth_pop(pForth);
+}
+
+// implements
 //static int fth_xxx(ForthState *pForth)
 //{
 //
@@ -640,6 +656,9 @@ static const ForthWordSet basic_lib[] =
 	{ "KEY", fth_key },
 	{ "CELLS", fth_cells },
 	{ "ALLOT", fth_allot },
+
+	{ "(", fth_left_parens },
+	{ "\\", fth_backslash },
 
 	{ NULL, NULL }
 };
@@ -710,6 +729,7 @@ ForthState *fth_create_state()
 	// setup immediate words
 	fth_make_immediate(pForth, ";");
 	fth_make_immediate(pForth, "[");
+	fth_make_immediate(pForth, "(");
 
 	// setup compile only words
 	fth_make_compile_only(pForth, ";");
@@ -905,7 +925,9 @@ int fth_quit(ForthState *pForth)
 		if (fth_tick(pForth))
 		{
 			// the WORD exists, execute it
-			fth_execute(pForth);
+			ForthNumber f = fth_execute(pForth);
+			if (!f)
+				return FTH_TRUE;
 
 			// if we are now compiling continue
 			if (pForth->compiling)
