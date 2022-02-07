@@ -41,7 +41,9 @@ typedef struct
 	unsigned int compile_only : 1;
 	unsigned int colon_word : 1;
 	unsigned int xt_on_stack : 1;
-	unsigned int unused : 27;
+	unsigned int constant : 1;
+	unsigned int variable : 1;
+	unsigned int unused : 25;
 } WordFlags;
 
 //
@@ -70,10 +72,10 @@ struct ForthState
 	ForthNumber maxr;
 	ForthNumber maxs;
 
-	ForthNumber *stack;		// bottom of stack
-	ForthNumber *SP;		// top of stack pointer
+	ForthNumber stack[FTH_STACK_SIZE];	// bottom of stack
+	ForthNumber *SP;					// top of stack pointer
 
-	ForthNumber *return_stack;
+	ForthNumber return_stack[FTH_RETURN_STACK_SIZE];
 	ForthNumber *RP;
 
 	char TIB[FTH_MAX_WORD];	// text input buffer

@@ -162,7 +162,16 @@ static int fth_word(ForthState *pForth)
 	}
 
 	if (c == EOF)
-		pForth->BLK = stdin;
+	{
+		if (pForth->BLK != stdin)
+		{
+			// close previous file
+			fclose(pForth->BLK);
+
+			// set input to terminal
+			pForth->BLK = stdin;
+		}
+	}
 
 	// make word in TIB asciiz
 	*p = '\0';
@@ -195,6 +204,8 @@ static int fth_make_dict_entry(ForthState *pForth, const char *word)
 	pNewHead->flags.colon_word = 0;
 	pNewHead->flags.compile_only = 0;
 	pNewHead->flags.xt_on_stack = 0;
+	pNewHead->flags.constant = 0;
+	pNewHead->flags.variable = 0;
 	pNewHead->flags.unused = 0;
 
 	pNewHead->name_len = (BYTE)(strlen(word) + 1);	// +1 to allow for null terminator
@@ -259,6 +270,7 @@ static int fth_const(ForthState *pForth)
 
 	pForth->head->code_pointer = fth_const_imp;
 	pForth->head->flags.xt_on_stack = 1;
+	pForth->head->flags.constant = 1;
 
 	// store constant value in dictionary
 	fth_write_to_cp(pForth, n);
@@ -274,6 +286,7 @@ static int fth_var(ForthState *pForth)
 
 	pForth->head->code_pointer = fth_var_imp;
 	pForth->head->flags.xt_on_stack = 1;
+	pForth->head->flags.variable = 1;
 
 	// store value in dictionary
 	fth_write_to_cp(pForth, FTH_UNINITIALIZED);
@@ -342,7 +355,7 @@ static int fth_tick(ForthState *pForth)
 
 	for (; pDict; pDict = pDict->next)
 	{
-		if (!_stricmp(pDict->name, word))
+		if (!pDict->flags.hidden && !_stricmp(pDict->name, word))
 		{
 			// word found so pop the input addr and push xt for the word onto the stack
 			fth_pop(pForth);
@@ -391,6 +404,7 @@ static int fth_colon(ForthState *pForth)
 
 	pForth->head->code_pointer = fth_address_interpreter;
 	pForth->head->flags.colon_word = 1;
+	pForth->head->flags.hidden = 1;				// new WORDS are not visible until fully defined
 
 	pForth->compiling = true;
 	return FTH_TRUE;
@@ -401,6 +415,8 @@ static int fth_semicolon(ForthState *pForth)
 {
 	// mark the EXIT of this word
 	fth_write_to_cp(pForth, 0);
+
+	pForth->head->flags.hidden = 0;				// new WORDS become visible only when fully defined
 
 	pForth->compiling = false;
 	return FTH_TRUE;
@@ -484,6 +500,51 @@ static int fth_create(ForthState *pForth)
 	return fth_make_dict_entry(pForth, newWord);
 }
 
+// implements QUIT
+static int fth_quit(ForthState *pForth)
+{
+	// show user prompt
+	if (pForth->BLK == stdin)
+		pForth->forth_print("firth>");
+
+	// TODO - reset return stack?
+	assert(pForth->RP == pForth->return_stack);
+
+	// fill input bufer
+	fth_push(pForth, (ForthNumber)pForth->TIB);
+	fth_push(pForth, sizeof(pForth->TIB) - 1);
+	fth_accept(pForth);
+	pForth->tib_len = fth_pop(pForth);
+
+	while (true)
+	{
+		// read input and try to find a word
+		if (fth_tick(pForth))
+		{
+			// the WORD exists, execute it
+			ForthNumber f = fth_execute(pForth);
+			if (!f)
+				return FTH_TRUE;
+
+			// if we are now compiling continue
+			if (pForth->compiling)
+				fth_compile(pForth);
+		}
+		else if (!fth_number(pForth))
+		{
+			char *s = (char*)fth_pop(pForth);
+			if (0 != *s)
+				forth_printf(pForth, "%s ?\n", s);
+			break;
+		}
+	}
+
+	if (pForth->BLK == stdin)
+		pForth->forth_print(" ok\n");
+
+	return FTH_TRUE;
+}
+
 // implements IMMEDIATE
 // make the last word created immediate
 static int fth_immediate(ForthState *pForth)
@@ -497,6 +558,13 @@ static int fth_immediate(ForthState *pForth)
 static int fth_hide(ForthState *pForth)
 {
 	pForth->head->flags.hidden = 1;
+	return FTH_TRUE;
+}
+
+// implements REVEAL
+static int fth_reveal(ForthState *pForth)
+{
+	pForth->head->flags.hidden = 0;
 	return FTH_TRUE;
 }
 
@@ -633,6 +701,21 @@ static int fth_backslash(ForthState *pForth)
 	return fth_pop(pForth);
 }
 
+// helper for LOAD
+static int load_helper(ForthState *pForth, char *filename)
+{
+	FILE *f = fopen(filename, "rt");
+	if (!f)
+	{
+		pForth->forth_print("File not found.\n");
+		return FTH_FALSE;
+	}
+
+	pForth->BLK = f;
+	
+	return FTH_TRUE;
+}
+
 // implements LOAD
 static int fth_load(ForthState *pForth)
 {
@@ -641,10 +724,7 @@ static int fth_load(ForthState *pForth)
 	fth_word(pForth);
 
 	char *filename = (char*)fth_pop(pForth);
-	FILE *f = fopen(filename, "rt");
-	pForth->BLK = f;
-	
-	return FTH_TRUE;
+	return load_helper(pForth, filename);
 }
 
 // implements R>
@@ -693,6 +773,23 @@ static int fth_else(ForthState *pForth)
 	return FTH_TRUE;
 }
 
+// implements BEGIN
+static int fth_begin(ForthState *pForth)
+{
+	// push current code pointer onto the stack
+	return fth_push(pForth, (ForthNumber)pForth->CP);
+}
+
+// implements AGAIN
+static int fth_again(ForthState *pForth)
+{
+	ForthNumber addr = fth_pop(pForth);
+	fth_write_to_cp(pForth, (ForthNumber)fth_tick_internal(pForth, "BRANCH"));
+	fth_write_to_cp(pForth, addr);
+
+	return FTH_TRUE;
+}
+
 // implements
 //static int fth_xxx(ForthState *pForth)
 //{
@@ -705,6 +802,9 @@ static int fth_else(ForthState *pForth)
 //
 static const ForthWordSet basic_lib[] =
 {
+	{ "BEGIN", fth_begin },
+	{ "AGAIN", fth_again },
+
 	{ "BRANCH?", fth_conditional_branch },
 	{ "BRANCH", fth_branch },
 	{ "IF", fth_if },
@@ -740,7 +840,7 @@ static const ForthWordSet basic_lib[] =
 	{ ".S", fth_dots },
 
 	{ "KEY", fth_key },
-//	{ "CELLS", fth_cells },
+	{ "CELLS", fth_cells },
 	{ "ALLOT", fth_allot },
 
 	{ "(", fth_left_parens },
@@ -760,7 +860,7 @@ int fth_set_output_function(ForthState *pForth, ForthOutputFunc f)
 	return FTH_TRUE;
 }
 
-// create a new forth state
+// C API to create a new forth state
 ForthState *fth_create_state()
 {
 	ForthState *pForth = malloc(sizeof(ForthState));
@@ -770,23 +870,6 @@ ForthState *fth_create_state()
 	pForth->dictionary_base = malloc(FTH_ENV_SIZE);
 	if (!pForth->dictionary_base)
 	{
-		free(pForth);
-		return NULL;
-	}
-
-	pForth->stack = malloc(FTH_STACK_SIZE);
-	if (!pForth->stack)
-	{
-		free(pForth->dictionary_base);
-		free(pForth);
-		return NULL;
-	}
-
-	pForth->return_stack = malloc(FTH_RETURN_STACK_SIZE);
-	if (!pForth->return_stack)
-	{
-		free(pForth->dictionary_base);
-		free(pForth->stack);
 		free(pForth);
 		return NULL;
 	}
@@ -821,10 +904,14 @@ ForthState *fth_create_state()
 	fth_make_immediate(pForth, "IF");
 	fth_make_immediate(pForth, "THEN");
 	fth_make_immediate(pForth, "ELSE");
+	fth_make_immediate(pForth, "BEGIN");
+	fth_make_immediate(pForth, "AGAIN");
 
 	// setup compile only words
 	fth_make_compile_only(pForth, ";");
 	fth_make_compile_only(pForth, "LITERAL");
+	fth_make_compile_only(pForth, "BRANCH");
+	fth_make_compile_only(pForth, "BRANCH?");
 
 	// setup defining words
 	/* none yet! */
@@ -836,25 +923,28 @@ ForthState *fth_create_state()
 	fth_define_word_var(pForth, "CP", (ForthNumber*)pForth->CP);
 	fth_define_word_var(pForth, "RP", (ForthNumber*)pForth->RP);
 	fth_define_word_var(pForth, "SP", (ForthNumber*)pForth->SP);
+	fth_define_word_var(pForth, ">IN", (ForthNumber*)pForth->IN);
+	fth_define_word_var(pForth, "TIB", (ForthNumber*)pForth->TIB);
 
 	fth_define_word_var(pForth, "ENV.MAXS", (ForthNumber*)&pForth->maxs);
 	fth_define_word_var(pForth, "ENV.MAXR", (ForthNumber*)&pForth->maxr);
 	fth_define_word_var(pForth, "ENV.HEX", (ForthNumber*)&pForth->hexmode);
 
+	load_helper(pForth, "core.fth");
+
 	return pForth;
 }
 
-// cleanup and free forth state
+// C API to cleanup and free forth state
 int fth_delete_state(ForthState *pForth)
 {
 	free(pForth->dictionary_base);
-	free(pForth->stack);
 	free(pForth);
 
 	return FTH_TRUE;
 }
 
-//
+// C API to mark the given word as hidden
 int fth_make_hidden(ForthState* pForth, char *word)
 {
 	DictionaryEntry *pEntry = fth_tick_internal(pForth, word);
@@ -868,7 +958,7 @@ int fth_make_hidden(ForthState* pForth, char *word)
 	return FTH_TRUE;
 }
 
-//
+// C API to mark the given word as immediate
 int fth_make_immediate(ForthState* pForth, char *word)
 {
 	DictionaryEntry *pEntry = fth_tick_internal(pForth, word);
@@ -882,7 +972,7 @@ int fth_make_immediate(ForthState* pForth, char *word)
 	return FTH_TRUE;
 }
 
-//
+// C API to mark the given word as compile-only
 int fth_make_compile_only(ForthState* pForth, char *word)
 {
 	DictionaryEntry *pEntry = fth_tick_internal(pForth, word);
@@ -910,7 +1000,7 @@ int fth_make_xt_required(ForthState* pForth, char *word)
 	return FTH_TRUE;
 }
 
-//
+// C API to register a wordset
 int fth_register_wordset(ForthState *pForth, const ForthWordSet words[])
 {
 	for (int i = 0; words[i].wordName && words[i].func; i++)
@@ -922,7 +1012,7 @@ int fth_register_wordset(ForthState *pForth, const ForthWordSet words[])
 	return FTH_TRUE;
 }
 
-// push a value on the stack
+// C API to push a value on the stack
 int fth_push(ForthState *pForth, ForthNumber val)
 {
 	// check for stack overflow
@@ -941,7 +1031,7 @@ int fth_push(ForthState *pForth, ForthNumber val)
 	return FTH_TRUE;
 }
 
-// pop a value off the stack
+// C API to pop a value off the stack
 ForthNumber fth_pop(ForthState *pForth)
 {
 	// check for stack underflow
@@ -955,7 +1045,7 @@ ForthNumber fth_pop(ForthState *pForth)
 	return *pForth->SP;
 }
 
-// return the TOS without removing it
+// C API to return the TOS without removing it
 int fth_peek(ForthState *pForth)
 {
 	if (pForth->SP == pForth->stack)
@@ -967,13 +1057,14 @@ int fth_peek(ForthState *pForth)
 	return *(pForth->SP-1);
 }
 
-//
+// C API for defining user constants
 int fth_define_word_const(ForthState *pForth, const char *name, ForthNumber val)
 {
 	fth_make_dict_entry(pForth, name);
 
 	pForth->head->code_pointer = fth_const_imp;
 	pForth->head->flags.xt_on_stack = 1;
+	pForth->head->flags.constant = 1;
 
 	// store constant value in dictionary
 	fth_write_to_cp(pForth, val);
@@ -981,13 +1072,14 @@ int fth_define_word_const(ForthState *pForth, const char *name, ForthNumber val)
 	return FTH_TRUE;
 }
 
-//
+// C API for defining user variables
 int fth_define_word_var(ForthState *pForth, const char *name, ForthNumber *pVar)
 {
 	fth_make_dict_entry(pForth, name);
 
 	pForth->head->code_pointer = fth_user_var_imp;
 	pForth->head->flags.xt_on_stack = 1;
+	pForth->head->flags.variable = 1;
 
 	// store var pointer in dictionary
 	fth_write_to_cp(pForth, (ForthNumber)pVar);
@@ -995,47 +1087,8 @@ int fth_define_word_var(ForthState *pForth, const char *name, ForthNumber *pVar)
 	return FTH_TRUE;
 }
 
-// the outer interpreter
-int fth_quit(ForthState *pForth)
+// C API for the outer interpreter
+int fth_update(ForthState *pForth)
 {
-	// show user prompt
-	if (pForth->BLK == stdin)
-		pForth->forth_print("forth>");
-
-	// TODO - reset return stack?
-	assert(pForth->RP == pForth->return_stack);
-
-	// fill input bufer
-	fth_push(pForth, (ForthNumber)pForth->TIB);
-	fth_push(pForth, sizeof(pForth->TIB) - 1);
-	fth_accept(pForth);
-	pForth->tib_len = fth_pop(pForth);
-
-	while (true)
-	{
-		// read input and try to find a word
-		if (fth_tick(pForth))
-		{
-			// the WORD exists, execute it
-			ForthNumber f = fth_execute(pForth);
-			if (!f)
-				return FTH_TRUE;
-
-			// if we are now compiling continue
-			if (pForth->compiling)
-				fth_compile(pForth);
-		}
-		else if (!fth_number(pForth))
-		{
-			char *s = (char*)fth_pop(pForth);
-			if (0 != *s)
-				forth_printf(pForth, "%s ?\n", s);
-			break;
-		}
-	}
-
-	if (pForth->BLK == stdin)
-		pForth->forth_print(" ok\n");
-	
-	return FTH_TRUE;
+	return fth_quit(pForth);
 }

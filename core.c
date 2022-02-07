@@ -40,15 +40,28 @@ static int fth_words(ForthState *pForth)
 			forth_printf(pForth, "%s ", pIter->name);
 
 			// add word meta-data
-			if (pIter->flags.immediate)
-				pForth->forth_print("[immediate] ");
 			if (pIter->flags.colon_word)
 				pForth->forth_print("[colon word] ");
+			else
+				pForth->forth_print("[native] ");
+			if (pIter->flags.immediate)
+				pForth->forth_print("[immediate] ");
 			if (pIter->flags.compile_only)
-				pForth->forth_print("[compile only] ");
+				pForth->forth_print("[compile-only] ");
+			if (pIter->flags.constant)
+				pForth->forth_print("[constant] ");
+			if (pIter->flags.variable)
+				pForth->forth_print("[variable] ");
 
 			pForth->forth_print("\n");
 			count++;
+
+			// pause every page
+			//if (!(count % 24))
+			//{
+			//	pForth->forth_print("(more)\n");
+			//	getc(stdin);
+			//}
 		}
 
 		pIter = pIter->next;

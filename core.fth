@@ -5,18 +5,20 @@
 : NIP SWAP DROP ;
 
 ( --  c)
-: BL 32 EMIT ;
+32 CONSTANT BL
+9 CONSTANT TAB
+10 CONSTANT LF
+7 CONSTANT BEL
+13 CONSTANT CR
 
 ( -- )
 : SPACE BL EMIT ;
-: TAB 9 EMIT ;
-: LF 10 EMIT ;
-: BEL 7 EMIT ;
-: CR 13 EMIT 10 EMIT ;
+: BEEP BEL EMIT ;
+: NEWLINE CR EMIT LF EMIT ;
 
 \ toggles for hex/decimal output
-\ : HEX 1 _hexmode ! ;
-\ : DECIMAL 0 _hexmode ! ;
+: HEX 1 ENV.HEX ! ;
+: DECIMAL 0 ENV.HEX ! ;
 
 \ define a convenience word for printing the TOS ( n -- )
 : PRINT . ;
@@ -29,7 +31,7 @@
 : HERE CP @ ;
 
 ( n -- n )
-: CELLS 1 * ;
+\ : CELLS 4 * ;
 
 ( n1 n2 -- n1 n2 n1 n2 )
 : 2DUP OVER OVER ;
