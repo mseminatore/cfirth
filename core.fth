@@ -1,6 +1,10 @@
 \ Core.fth - core word library for CForth
 \ Copyright 2022 Mark Seminatore. All rights reserved.
 
+: star 42 emit ;
+
+: foo 1 begin 1 + dup 10 <> while star repeat ;
+
 ( n1 n2 -- n2 )
 : NIP SWAP DROP ;
 

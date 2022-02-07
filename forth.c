@@ -790,6 +790,40 @@ static int fth_again(ForthState *pForth)
 	return FTH_TRUE;
 }
 
+// implements UNTIL
+static int fth_until(ForthState *pForth)
+{
+	ForthNumber addr = fth_pop(pForth);
+	fth_write_to_cp(pForth, (ForthNumber)fth_tick_internal(pForth, "BRANCH?"));
+	fth_write_to_cp(pForth, addr);
+
+	return FTH_TRUE;
+}
+
+// implements WHILE
+static int fth_while(ForthState *pForth)
+{
+	fth_write_to_cp(pForth, (ForthNumber)fth_tick_internal(pForth, "BRANCH?"));
+	fth_push(pForth, (ForthNumber)pForth->CP);
+	fth_write_to_cp(pForth, -1);
+
+	return FTH_TRUE;
+}
+
+// implements REPEAT
+static int fth_repeat(ForthState *pForth)
+{
+	ForthNumber *while_addr = (ForthNumber*)fth_pop(pForth);
+
+	// compile-time behavior
+	fth_write_to_cp(pForth, (ForthNumber)fth_tick_internal(pForth, "BRANCH"));
+	ForthNumber dest = fth_pop(pForth);
+	fth_write_to_cp(pForth, dest);
+	*while_addr = (ForthNumber)pForth->CP;
+
+	return FTH_TRUE;
+}
+
 // implements
 //static int fth_xxx(ForthState *pForth)
 //{
@@ -804,6 +838,9 @@ static const ForthWordSet basic_lib[] =
 {
 	{ "BEGIN", fth_begin },
 	{ "AGAIN", fth_again },
+	{ "UNTIL", fth_until },
+	{ "WHILE", fth_while },
+	{ "REPEAT", fth_repeat },
 
 	{ "BRANCH?", fth_conditional_branch },
 	{ "BRANCH", fth_branch },
@@ -906,6 +943,9 @@ ForthState *fth_create_state()
 	fth_make_immediate(pForth, "ELSE");
 	fth_make_immediate(pForth, "BEGIN");
 	fth_make_immediate(pForth, "AGAIN");
+	fth_make_immediate(pForth, "UNTIL");
+	fth_make_immediate(pForth, "WHILE");
+	fth_make_immediate(pForth, "REPEAT");
 
 	// setup compile only words
 	fth_make_compile_only(pForth, ";");
