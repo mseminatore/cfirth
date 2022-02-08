@@ -113,13 +113,14 @@ void forth_printf(ForthState *pForth, char *format, ...);
 int fth_quit(ForthState *pForth);
 
 int fth_register_wordset(ForthState *pForth, const ForthWordSet words[]);
-static int fth_xxx(ForthState * pForth);
 int fth_register_core_wordset(ForthState *pForth);
 
-int fth_make_compile_only(ForthState* pForth, char *word);
-int fth_make_immediate(ForthState* pForth, char *word);
-int fth_make_hidden(ForthState* pForth, char *word);
-int fth_make_xt_required(ForthState* pForth, char *word);
+int fth_make_compile_only(ForthState *pForth, const char *word);
+int fth_make_immediate(ForthState *pForth, const char *word);
+int fth_make_hidden(ForthState *pForth, const char *word);
+int fth_make_xt_required(ForthState *pForth, const char *word);
 
 int fth_define_word_const(ForthState*, const char *name, ForthNumber val);
 int fth_define_word_var(ForthState*, const char *name, ForthNumber *pVar);
+
+int fth_update(ForthState *pForth);
