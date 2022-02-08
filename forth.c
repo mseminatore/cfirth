@@ -927,6 +927,12 @@ static int fth_ploop(ForthState *pForth)
 	return FTH_TRUE;
 }
 
+// run-time behavior of .S
+static int fth_dot_quote_imp(ForthState *pForth)
+{
+
+}
+
 // implements ."
 static int fth_dot_quote(ForthState *pForth)
 {
@@ -960,6 +966,38 @@ static int fth_j(ForthState *pForth)
 	return fth_push(pForth, n);
 }
 
+// implements POSTPONE
+static int fth_postpone(ForthState *pForth)
+{
+	// get the next word
+	fth_push(pForth, ' ');
+	fth_word(pForth);
+
+	// find the word in the dictionary
+	char *oldWordName = (char*)fth_pop(pForth);
+	DictionaryEntry *pOldWord = fth_tick_internal(pForth, oldWordName);
+	if (!pOldWord)
+	{
+		// old word not found!
+		pForth->forth_print(oldWordName);
+		pForth->forth_print(" word not found!\n");
+		return FTH_FALSE;
+	}
+
+	// append the compilation semantics
+	fth_write_to_cp(pForth, (ForthNumber)pOldWord);
+
+	return FTH_TRUE;
+}
+
+// implements [']
+// : ['] ( compilation: "name" --; run-time: -- xt ) ' POSTPONE literal ; immediate
+static int fth_bracket_tick(ForthState *pForth)
+{
+
+	return FTH_TRUE;
+}
+
 // implements
 //static int fth_xxx(ForthState *pForth)
 //{
@@ -982,6 +1020,7 @@ static const ForthWordSet basic_lib[] =
 	{ "LOOP", fth_loop },
 	{ "+LOOP", fth_ploop },
 	{ ".\"", fth_dot_quote },
+//	{ "POSTPONE", fth_postpone },
 
 	{ "BRANCH?", fth_conditional_branch },
 	{ "BRANCH", fth_branch },
@@ -1048,6 +1087,7 @@ static const char *immediate_words[] =
 	"DO",
 	"LOOP",
 	"+LOOP",
+//	"POSTPONE",
 	NULL
 };
 
@@ -1071,6 +1111,7 @@ static const char *compile_only_words[] =
 	"+LOOP",
 	"I",
 	"J",
+//	"POSTPONE",
 	NULL
 };
 
