@@ -143,11 +143,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="core.c" />
-    <ClCompile Include="forth.c" />
+    <ClCompile Include="firth.c" />
+    <ClCompile Include="firth_float.c" />
     <ClCompile Include="main.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="forth.h" />
+    <ClInclude Include="firth.h" />
+    <ClInclude Include="firth_config.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

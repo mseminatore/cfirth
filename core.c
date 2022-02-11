@@ -1,65 +1,65 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "forth.h"
+#include "firth.h"
 
 // implements BYTE
-static int fth_bye(ForthState *pForth)
+static int fth_bye(FirthState *pFirth)
 {
-	pForth->halted = 1;
+	pFirth->halted = 1;
 
 	return FTH_TRUE;
 }
 
 // implements '.' - print out the TOS
-static int fth_dot(ForthState *pForth)
+static int fth_dot(FirthState *pFirth)
 {
-	ForthNumber n = fth_pop(pForth);
+	FirthNumber n = fth_pop(pFirth);
 
-	if (pForth->hexmode)
-		forth_printf(pForth, "0x%0X ", n);
+	if (pFirth->hexmode)
+		firth_printf(pFirth, "0x%0X ", n);
 	else
-		forth_printf(pForth, "%d ", n);
+		firth_printf(pFirth, "%d ", n);
 
 	return FTH_TRUE;
 }
 
 // implements WORDS
-static int fth_words(ForthState *pForth)
+static int fth_words(FirthState *pFirth)
 {
 	int count = 0;
 
-	pForth->forth_print("\nDictionary Listing...\n");
+	pFirth->firth_print("\nDictionary Listing...\n");
 
-	DictionaryEntry *pIter = pForth->head;
+	DictionaryEntry *pIter = pFirth->head;
 
 	while (pIter)
 	{
 		if (!pIter->flags.hidden)
 		{
-			forth_printf(pForth, "%s ", pIter->name);
+			firth_printf(pFirth, "%s ", pIter->name);
 
 			// add word meta-data
 			if (pIter->flags.colon_word)
-				pForth->forth_print("[colon word] ");
+				pFirth->firth_print("[colon word] ");
 			else
-				pForth->forth_print("[native] ");
+				pFirth->firth_print("[native] ");
 			if (pIter->flags.immediate)
-				pForth->forth_print("[immediate] ");
+				pFirth->firth_print("[immediate] ");
 			if (pIter->flags.compile_only)
-				pForth->forth_print("[compile-only] ");
+				pFirth->firth_print("[compile-only] ");
 			if (pIter->flags.constant)
-				pForth->forth_print("[constant] ");
+				pFirth->firth_print("[constant] ");
 			if (pIter->flags.variable)
-				pForth->forth_print("[variable] ");
+				pFirth->firth_print("[variable] ");
 
-			pForth->forth_print("\n");
+			pFirth->firth_print("\n");
 			count++;
 
 			// pause every page
 			//if (!(count % 24))
 			//{
-			//	pForth->forth_print("(more)\n");
+			//	pFirth->firth_print("(more)\n");
 			//	getc(stdin);
 			//}
 		}
@@ -67,63 +67,63 @@ static int fth_words(ForthState *pForth)
 		pIter = pIter->next;
 	}
 
-	forth_printf(pForth, "\nThere are %d WORDS in the dictionary.\n", count);
+	firth_printf(pFirth, "\nThere are %d WORDS in the dictionary.\n", count);
 
 	return FTH_TRUE;
 }
 
 //
-static int fth_emit(ForthState *pForth)
+static int fth_emit(FirthState *pFirth)
 {
-	ForthNumber n = fth_pop(pForth);
-	forth_printf(pForth, "%c", (char)n);
+	FirthNumber n = fth_pop(pFirth);
+	firth_printf(pFirth, "%c", (char)n);
 	return FTH_TRUE;
 }
 
 //
-static int fth_plus(ForthState *pForth)
+static int fth_plus(FirthState *pFirth)
 {
-	ForthNumber b = fth_pop(pForth);
-	ForthNumber a = fth_pop(pForth);
-	return fth_push(pForth, a + b);
+	FirthNumber b = fth_pop(pFirth);
+	FirthNumber a = fth_pop(pFirth);
+	return fth_push(pFirth, a + b);
 }
 
 //
-static int fth_minus(ForthState *pForth)
+static int fth_minus(FirthState *pFirth)
 {
-	ForthNumber b = fth_pop(pForth);
-	ForthNumber a = fth_pop(pForth);
-	return fth_push(pForth, a - b);
+	FirthNumber b = fth_pop(pFirth);
+	FirthNumber a = fth_pop(pFirth);
+	return fth_push(pFirth, a - b);
 }
 
 //
-static int fth_mul(ForthState *pForth)
+static int fth_mul(FirthState *pFirth)
 {
-	ForthNumber b = fth_pop(pForth);
-	ForthNumber a = fth_pop(pForth);
-	return fth_push(pForth, a * b);
+	FirthNumber b = fth_pop(pFirth);
+	FirthNumber a = fth_pop(pFirth);
+	return fth_push(pFirth, a * b);
 }
 
 //
-static int fth_div(ForthState *pForth)
+static int fth_div(FirthState *pFirth)
 {
-	ForthNumber b = fth_pop(pForth);
-	ForthNumber a = fth_pop(pForth);
-	return fth_push(pForth, a / b);
+	FirthNumber b = fth_pop(pFirth);
+	FirthNumber a = fth_pop(pFirth);
+	return fth_push(pFirth, a / b);
 }
 
 // fetch value at addr on TOS
-static int fth_fetch(ForthState *pForth)
+static int fth_fetch(FirthState *pFirth)
 {
-	ForthNumber *pInt = (ForthNumber*)fth_pop(pForth);
-	return fth_push(pForth, *pInt);
+	FirthNumber *pInt = (FirthNumber*)fth_pop(pFirth);
+	return fth_push(pFirth, *pInt);
 }
 
 // ( n addr -- )
-static int fth_store(ForthState *pForth)
+static int fth_store(FirthState *pFirth)
 {
-	ForthNumber *pInt = (ForthNumber*)fth_pop(pForth);
-	ForthNumber val = fth_pop(pForth);
+	FirthNumber *pInt = (FirthNumber*)fth_pop(pFirth);
+	FirthNumber val = fth_pop(pFirth);
 
 	*pInt = val;
 
@@ -131,208 +131,208 @@ static int fth_store(ForthState *pForth)
 }
 
 //
-static int fth_swap(ForthState *pForth)
+static int fth_swap(FirthState *pFirth)
 {
-	ForthNumber a = fth_pop(pForth);
-	ForthNumber b = fth_pop(pForth);
+	FirthNumber a = fth_pop(pFirth);
+	FirthNumber b = fth_pop(pFirth);
 	
-	fth_push(pForth, a);
+	fth_push(pFirth, a);
 	
-	return fth_push(pForth, b);
+	return fth_push(pFirth, b);
 }
 
 // drop ( n -- )
-static int fth_drop(ForthState *pForth)
+static int fth_drop(FirthState *pFirth)
 {
-	return fth_pop(pForth);
+	return fth_pop(pFirth);
 }
 
 // dup ( n -- n n )
-static int fth_dup(ForthState *pForth)
+static int fth_dup(FirthState *pFirth)
 {
-	ForthNumber a = fth_pop(pForth);
-	fth_push(pForth, a);
+	FirthNumber a = fth_pop(pFirth);
+	fth_push(pFirth, a);
 
-	return fth_push(pForth, a);
+	return fth_push(pFirth, a);
 }
 
 // rot (n1 n2 n3 -- n2 n3 n1)
-static int fth_rot(ForthState *pForth)
+static int fth_rot(FirthState *pFirth)
 {
-	ForthNumber n3 = fth_pop(pForth);
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
+	FirthNumber n3 = fth_pop(pFirth);
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
 
-	fth_push(pForth, n2);
-	fth_push(pForth, n3);
+	fth_push(pFirth, n2);
+	fth_push(pFirth, n3);
 
-	return fth_push(pForth, n1);
+	return fth_push(pFirth, n1);
 }
 
 // over ( n1 n2 -- n1 n2 n1 )
-static int fth_over(ForthState *pForth)
+static int fth_over(FirthState *pFirth)
 {
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
 	
-	fth_push(pForth, n1);
-	fth_push(pForth, n2);
-	return fth_push(pForth, n1);
+	fth_push(pFirth, n1);
+	fth_push(pFirth, n2);
+	return fth_push(pFirth, n1);
 }
 
 //
-static int fth_equal(ForthState *pForth)
+static int fth_equal(FirthState *pFirth)
 {
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
-	return fth_push(pForth, n1 == n2 ? FTH_TRUE : FTH_FALSE);
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
+	return fth_push(pFirth, n1 == n2 ? FTH_TRUE : FTH_FALSE);
 }
 
 //
-static int fth_not_equal(ForthState *pForth)
+static int fth_not_equal(FirthState *pFirth)
 {
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
-	return fth_push(pForth, n1 != n2 ? FTH_TRUE : FTH_FALSE);
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
+	return fth_push(pFirth, n1 != n2 ? FTH_TRUE : FTH_FALSE);
 }
 
 //
-static int fth_greater_than(ForthState *pForth)
+static int fth_greater_than(FirthState *pFirth)
 {
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
-	return fth_push(pForth, n1 > n2 ? FTH_TRUE : FTH_FALSE);
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
+	return fth_push(pFirth, n1 > n2 ? FTH_TRUE : FTH_FALSE);
 }
 
 //
-static int fth_less_than(ForthState *pForth)
+static int fth_less_than(FirthState *pFirth)
 {
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
-	return fth_push(pForth, n1 < n2 ? FTH_TRUE : FTH_FALSE);
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
+	return fth_push(pFirth, n1 < n2 ? FTH_TRUE : FTH_FALSE);
 }
 
 //
-static int fth_equal_zero(ForthState *pForth)
+static int fth_equal_zero(FirthState *pFirth)
 {
-	ForthNumber n = fth_pop(pForth);
-	return fth_push(pForth, n == 0 ? FTH_TRUE : FTH_FALSE);
+	FirthNumber n = fth_pop(pFirth);
+	return fth_push(pFirth, n == 0 ? FTH_TRUE : FTH_FALSE);
 }
 
 //
-static int fth_not_equal_zero(ForthState *pForth)
+static int fth_not_equal_zero(FirthState *pFirth)
 {
-	ForthNumber n = fth_pop(pForth);
-	return fth_push(pForth, n != 0 ? FTH_TRUE : FTH_FALSE);
+	FirthNumber n = fth_pop(pFirth);
+	return fth_push(pFirth, n != 0 ? FTH_TRUE : FTH_FALSE);
 }
 
 //
-static int fth_less_than_zero(ForthState *pForth)
+static int fth_less_than_zero(FirthState *pFirth)
 {
-	ForthNumber n = fth_pop(pForth);
-	return fth_push(pForth, n < 0 ? FTH_TRUE : FTH_FALSE);
+	FirthNumber n = fth_pop(pFirth);
+	return fth_push(pFirth, n < 0 ? FTH_TRUE : FTH_FALSE);
 }
 
 
-static int fth_greater_than_zero(ForthState *pForth)
+static int fth_greater_than_zero(FirthState *pFirth)
 {
-	ForthNumber n = fth_pop(pForth);
-	return fth_push(pForth, n > 0 ? FTH_TRUE : FTH_FALSE);
-}
-
-//
-static int fth_and(ForthState *pForth)
-{
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
-	return fth_push(pForth, n1 & n2);
+	FirthNumber n = fth_pop(pFirth);
+	return fth_push(pFirth, n > 0 ? FTH_TRUE : FTH_FALSE);
 }
 
 //
-static int fth_or(ForthState *pForth)
+static int fth_and(FirthState *pFirth)
 {
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
-	return fth_push(pForth, n1 | n2);
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
+	return fth_push(pFirth, n1 & n2);
 }
 
 //
-static int fth_not(ForthState *pForth)
+static int fth_or(FirthState *pFirth)
 {
-	ForthNumber n = fth_pop(pForth);
-	return fth_push(pForth, !n);
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
+	return fth_push(pFirth, n1 | n2);
 }
 
 //
-static int fth_xor(ForthState *pForth)
+static int fth_not(FirthState *pFirth)
 {
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
-	return fth_push(pForth, n1 ^ n2);
+	FirthNumber n = fth_pop(pFirth);
+	return fth_push(pFirth, !n);
 }
 
 //
-static int fth_mod(ForthState *pForth)
+static int fth_xor(FirthState *pFirth)
 {
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
-	return fth_push(pForth, n1 % n2);
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
+	return fth_push(pFirth, n1 ^ n2);
 }
 
 //
-static int fth_div_mod(ForthState *pForth)
+static int fth_mod(FirthState *pFirth)
 {
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
-
-	fth_push(pForth, n1 % n2); // push rem
-	return fth_push(pForth, n1 / n2); // push quotient
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
+	return fth_push(pFirth, n1 % n2);
 }
 
 //
-static int fth_mul_div(ForthState *pForth)
+static int fth_div_mod(FirthState *pFirth)
 {
-	ForthNumber n3 = fth_pop(pForth);
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
+
+	fth_push(pFirth, n1 % n2); // push rem
+	return fth_push(pFirth, n1 / n2); // push quotient
+}
+
+//
+static int fth_mul_div(FirthState *pFirth)
+{
+	FirthNumber n3 = fth_pop(pFirth);
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
 
 	long long n4 = (long long)(n1) * n2;
-	return fth_push(pForth, (ForthNumber)(n4 / n3));
+	return fth_push(pFirth, (FirthNumber)(n4 / n3));
 }
 
 //
-static int fth_lshift(ForthState *pForth)
+static int fth_lshift(FirthState *pFirth)
 {
-	ForthNumber shift = fth_pop(pForth);
-	ForthNumber num = fth_pop(pForth);
-	return fth_push(pForth, num << shift);
+	FirthNumber shift = fth_pop(pFirth);
+	FirthNumber num = fth_pop(pFirth);
+	return fth_push(pFirth, num << shift);
 }
 
 //
-static int fth_rshift(ForthState *pForth)
+static int fth_rshift(FirthState *pFirth)
 {
-	ForthNumber shift = fth_pop(pForth);
-	ForthNumber num = fth_pop(pForth);
-	return fth_push(pForth, num >> shift);
+	FirthNumber shift = fth_pop(pFirth);
+	FirthNumber num = fth_pop(pFirth);
+	return fth_push(pFirth, num >> shift);
 }
 
 //
-static int fth_pow(ForthState *pForth)
+static int fth_pow(FirthState *pFirth)
 {
-	ForthNumber n2 = fth_pop(pForth);
-	ForthNumber n1 = fth_pop(pForth);
-	return fth_push(pForth, (ForthNumber)(pow(n1, n2) + 0.5f));
+	FirthNumber n2 = fth_pop(pFirth);
+	FirthNumber n1 = fth_pop(pFirth);
+	return fth_push(pFirth, (FirthNumber)(pow(n1, n2) + 0.5f));
 }
 
 //
-//static int fth_xxx(ForthState *pForth)
+//static int fth_xxx(FirthState *pFirth)
 //{
-//	ForthNumber n = fth_pop(pForth);
+//	FirthNumber n = fth_pop(pFirth);
 //
 //}
 
 // register our collection of custom words
-static const ForthWordSet core_lib[] =
+static const FirthWordSet core_lib[] =
 {
 	{ "BYE", fth_bye },
 	{ ".", fth_dot },
@@ -384,7 +384,7 @@ static const ForthWordSet core_lib[] =
 };
 
 //
-int fth_register_core_wordset(ForthState *pForth)
+int fth_register_core_wordset(FirthState *pFirth)
 {
-	return fth_register_wordset(pForth, core_lib);
+	return fth_register_wordset(pFirth, core_lib);
 }
