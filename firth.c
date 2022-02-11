@@ -251,6 +251,17 @@ static int fth_fconst_imp(FirthState *pFirth)
 }
 
 // run-time implementation of FVARIABLE
+static int fth_fvar_imp(FirthState *pFirth)
+{
+	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
+
+	int addr = (int)fth_body_internal(pDict);
+	fth_push(pFirth, addr);
+
+	return FTH_TRUE;
+}
+
+// run-time implementation of user FVARIABLE
 static int fth_user_fvar_imp(FirthState *pFirth)
 {
 	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
@@ -261,6 +272,40 @@ static int fth_user_fvar_imp(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
+// create a FCONSTANT word
+static int fth_fconst(FirthState *pFirth)
+{
+	// create a new dictionary entry for this constant
+	fth_create(pFirth);
+
+	// the stack at this point contains | const_val |
+	FirthFloat n = fth_popf(pFirth);
+
+	pFirth->head->code_pointer = fth_fconst_imp;
+	pFirth->head->flags.xt_on_stack = 1;
+	pFirth->head->flags.constant = 1;
+
+	// store constant value in dictionary
+	fth_write_to_cp(pFirth, *(int*)&n);
+
+	return FTH_TRUE;
+}
+
+// create a FVARIABLE word
+static int fth_fvar(FirthState *pFirth)
+{
+	// create a new dictionary entry for this variable
+	fth_create(pFirth);
+
+	pFirth->head->code_pointer = fth_fvar_imp;
+	pFirth->head->flags.xt_on_stack = 1;
+	pFirth->head->flags.variable = 1;
+
+	// store value in dictionary
+	fth_write_to_cp(pFirth, FTH_UNINITIALIZED);
+
+	return FTH_TRUE;
+}
 #endif
 
 // run-time implementation of CONSTANT
@@ -336,13 +381,22 @@ static int fth_var(FirthState *pFirth)
 static int fth_number(FirthState *pFirth)
 {
 	char *input = (char*)fth_peek(pFirth);
-	if (!isInteger(input))
-		return FTH_FALSE;
+	if (isInteger(input))
+	{
+		FirthNumber n = atoi(input);
+		fth_pop(pFirth);
 
-	FirthNumber n = atoi(input);
-	fth_pop(pFirth);
+		return fth_push(pFirth, n);
+	}
+	
+	if (isdigit(input[0]) && (strchr(input, '.') || strchr(input, 'e')))
+	{
+		FirthFloat num = (FirthFloat)atof(input);
+		fth_pop(pFirth);
+		return fth_pushf(pFirth, num);
+	}
 
-	return fth_push(pFirth, n);
+	return FTH_FALSE;
 }
 
 // push a literal value onto the stack
@@ -1110,6 +1164,13 @@ static const FirthWordSet basic_lib[] =
 	{ ":", fth_colon },
 	{ ";", fth_semicolon },
 	{ "LITERAL", fth_literal },
+	
+#if FTH_INCLUDE_FLOAT == 1
+	{ "FCONST", fth_fconst },
+	{ "FCONSTANT", fth_fconst },
+	{ "FVAR", fth_fvar },
+	{ "FVARIABLE", fth_fvar },
+#endif
 
 	{ "DEPTH", fth_depth },
 	{ ".S", fth_dots },
@@ -1415,7 +1476,7 @@ int fth_define_word_fconst(FirthState *pFirth, const char *name, FirthFloat val)
 	pFirth->head->flags.constant = 1;
 
 	// store constant value in dictionary
-	fth_write_to_cp(pFirth, (FirthNumber)val);
+	fth_write_to_cp(pFirth, (FirthNumber)*(int*)&val);
 
 	return FTH_TRUE;
 }

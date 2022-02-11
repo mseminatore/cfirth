@@ -328,9 +328,9 @@ static const FirthWordSet float_lib[] =
 int firth_register_float(FirthState *pFirth)
 {
 	// common constants
-	//fth_define_word_fconst("PI",	3.1415926f);
-	//fth_define_word_fconst("PI_2",	1.5707963f);
-	//fth_define_word_fconst("PI_4", 0.78539816f);
+	fth_define_word_fconst(pFirth, "PI",	3.1415926f);
+	fth_define_word_fconst(pFirth, "PI_2",	1.5707963f);
+	fth_define_word_fconst(pFirth, "PI_4", 0.78539816f);
 
 	fth_define_word_fconst(pFirth, "FEPSILON", FTH_EPSILON);
 
