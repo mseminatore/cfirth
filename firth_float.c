@@ -1,7 +1,8 @@
 #include "firth.h"
+#include "firth_float.h"
 
 //
-static FirthFloat fth_popf(FirthState *pFirth)
+FirthFloat fth_popf(FirthState *pFirth)
 {
 	// check for stack underflow
 	if (pFirth->FP <= pFirth->float_stack)
@@ -15,7 +16,7 @@ static FirthFloat fth_popf(FirthState *pFirth)
 }
 
 //
-static int fth_pushf(FirthState *pFirth, FirthFloat val)
+int fth_pushf(FirthState *pFirth, FirthFloat val)
 {
 	// check for stack overflow
 	if ((pFirth->FP - pFirth->float_stack) + 1 > FTH_STACK_SIZE)
@@ -34,7 +35,7 @@ static int fth_pushf(FirthState *pFirth, FirthFloat val)
 }
 
 //
-static FirthFloat fth_peekf(FirthState *pFirth)
+FirthFloat fth_peekf(FirthState *pFirth)
 {
 	return *(pFirth->FP-1);
 }
@@ -192,12 +193,13 @@ static int fswap(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
+//
 static int dotf(FirthState *pFirth)
 {
 	// make a copy of the stack
 	FirthFloat *fs = pFirth->FP;
 
-	pFirth->firth_print("Top -> [ ");
+	pFirth->firth_print("Float Stack Top -> [ ");
 	while (fs-- != pFirth->float_stack)
 	{
 		firth_printf(pFirth, "%f ", *fs);
@@ -260,7 +262,7 @@ int feq(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-int fless(FirthState *pFirth)
+static int fless(FirthState *pFirth)
 {
 	FirthFloat n2 = fth_popf(pFirth);
 	FirthFloat n1 = fth_popf(pFirth);
@@ -269,7 +271,7 @@ int fless(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-int fgreater(FirthState *pFirth)
+static int fgreater(FirthState *pFirth)
 {
 	FirthFloat n2 = fth_popf(pFirth);
 	FirthFloat n1 = fth_popf(pFirth);
@@ -278,7 +280,7 @@ int fgreater(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-int fne(FirthState *pFirth)
+static int fne(FirthState *pFirth)
 {
 	FirthFloat n2 = fth_popf(pFirth);
 	FirthFloat n1 = fth_popf(pFirth);
@@ -330,7 +332,7 @@ int firth_register_float(FirthState *pFirth)
 	//fth_define_word_fconst("PI_2",	1.5707963f);
 	//fth_define_word_fconst("PI_4", 0.78539816f);
 
-	//fth_define_word_fconst("FEPSILON", FTH_EPSILON);
+	fth_define_word_fconst(pFirth, "FEPSILON", FTH_EPSILON);
 
 	return fth_register_wordset(pFirth, float_lib);
 }

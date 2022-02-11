@@ -9,6 +9,10 @@
 
 #include "firth.h"
 
+#if FTH_INCLUDE_FLOAT == 1
+#	include "firth_float.h"
+#endif
+
 //
 bool true = ~0;
 bool false = 0;
@@ -233,6 +237,31 @@ static int fth_write_to_cp(FirthState *pFirth, FirthNumber val)
 
 	return FTH_TRUE;
 }
+
+#if FTH_INCLUDE_FLOAT == 1
+// run-time implementation of FCONSTANT
+static int fth_fconst_imp(FirthState *pFirth)
+{
+	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
+
+	FirthFloat val = *(FirthFloat*)fth_body_internal(pDict);
+	fth_pushf(pFirth, val);
+
+	return FTH_TRUE;
+}
+
+// run-time implementation of FVARIABLE
+static int fth_user_fvar_imp(FirthState *pFirth)
+{
+	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
+
+	FirthFloat **ppVar = (FirthFloat**)fth_body_internal(pDict);
+	fth_pushf(pFirth, (FirthFloat)**ppVar);
+
+	return FTH_TRUE;
+}
+
+#endif
 
 // run-time implementation of CONSTANT
 static int fth_const_imp(FirthState *pFirth)
@@ -616,7 +645,7 @@ static int fth_dots(FirthState *pFirth)
 	// make a copy of the stack
 	FirthNumber *s = pFirth->SP;
 
-	pFirth->firth_print("Top -> [ ");
+	pFirth->firth_print("Stack Top -> [ ");
 	while (s-- != pFirth->stack)
 	{
 		if (pFirth->hexmode)
@@ -1374,6 +1403,38 @@ int fth_define_word_var(FirthState *pFirth, const char *name, FirthNumber *pVar)
 
 	return FTH_TRUE;
 }
+
+#if FTH_INCLUDE_FLOAT == 1
+// C API for defining float user constants
+int fth_define_word_fconst(FirthState *pFirth, const char *name, FirthFloat val)
+{
+	fth_make_dict_entry(pFirth, name);
+
+	pFirth->head->code_pointer = fth_fconst_imp;
+	pFirth->head->flags.xt_on_stack = 1;
+	pFirth->head->flags.constant = 1;
+
+	// store constant value in dictionary
+	fth_write_to_cp(pFirth, (FirthNumber)val);
+
+	return FTH_TRUE;
+}
+
+// C API for defining user variables
+int fth_define_word_fvar(FirthState *pFirth, const char *name, FirthFloat *pVar)
+{
+	fth_make_dict_entry(pFirth, name);
+
+	pFirth->head->code_pointer = fth_user_fvar_imp;
+	pFirth->head->flags.xt_on_stack = 1;
+	pFirth->head->flags.variable = 1;
+
+	// store var pointer in dictionary
+	fth_write_to_cp(pFirth, (FirthNumber)pVar);
+
+	return FTH_TRUE;
+}
+#endif
 
 // C API for the outer interpreter
 int fth_update(FirthState *pFirth)
