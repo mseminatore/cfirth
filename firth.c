@@ -306,6 +306,18 @@ static int fth_fvar(FirthState *pFirth)
 
 	return FTH_TRUE;
 }
+
+// push a float literal value onto the stack
+static int fth_fliteral(FirthState *pFirth)
+{
+	// fetch the next address and use it to get the literal value
+	FirthFloat val = *(FirthFloat*)pFirth->IP++;
+
+	// push literal value onto the stack
+	fth_pushf(pFirth, val);
+	return FTH_TRUE;
+}
+
 #endif
 
 // run-time implementation of CONSTANT
@@ -388,13 +400,16 @@ static int fth_number(FirthState *pFirth)
 
 		return fth_push(pFirth, n);
 	}
-	
+
+#if FTH_INCLUDE_FLOAT == 1
 	if (isdigit(input[0]) && (strchr(input, '.') || strchr(input, 'e')))
 	{
 		FirthFloat num = (FirthFloat)atof(input);
 		fth_pop(pFirth);
+
 		return fth_pushf(pFirth, num);
 	}
+#endif
 
 	return FTH_FALSE;
 }
@@ -546,6 +561,14 @@ static int fth_compile(FirthState *pFirth)
 				fth_write_to_cp(pFirth, (FirthNumber)xt);
 				fth_number(pFirth);
 				fth_write_to_cp(pFirth, fth_pop(pFirth));
+			}
+			else if (isdigit(input[0]) && (strchr(input, '.') || strchr(input, 'e')))
+			{
+				DictionaryEntry *xt = fth_tick_internal(pFirth, "FLITERAL");
+				fth_write_to_cp(pFirth, (FirthNumber)xt);
+				fth_number(pFirth);
+				FirthFloat f = fth_popf(pFirth);
+				fth_write_to_cp(pFirth, *(int*)&f);
 			}
 			else
 				break;
@@ -1170,6 +1193,7 @@ static const FirthWordSet basic_lib[] =
 	{ "FCONSTANT", fth_fconst },
 	{ "FVAR", fth_fvar },
 	{ "FVARIABLE", fth_fvar },
+	{ "FLITERAL", fth_fliteral },
 #endif
 
 	{ "DEPTH", fth_depth },
