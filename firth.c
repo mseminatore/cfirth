@@ -1028,6 +1028,31 @@ static const FirthWordSet basic_lib[] =
 	{ "THEN", fth_then },
 	{ "ELSE", fth_else },
 
+#if FTH_FIRTH_SYNTAX == 1
+	{ "ENDIF", fth_then },
+	{ "FOR", fth_do },
+	{ "ALLOC", fth_allot },
+	{ "CONST", fth_const },
+	{ "VAR", fth_var },
+
+	#if FTH_I_LIKE_SWIFT == 1
+		{ "FUNC", fth_colon },
+	#endif
+
+	#if FTH_I_LIKE_RUST == 1
+		{ "FN", fth_colon },
+	#endif
+
+	#if FTH_I_LIKE_PYTHON == 1
+		{ "DEF", fth_colon },
+	#endif
+
+	#if FTH_I_LIKE_JAVASCRIPT == 1
+		{ "FUNCTION", fth_colon },
+	#endif
+
+#endif
+
 	{ ">BODY", fth_body },
 	{ "I", fth_r_fetch },
 	{ "J", fth_j },
