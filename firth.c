@@ -19,6 +19,12 @@ bool false = 0;
 
 static DictionaryEntry *fth_tick_internal(FirthState *pFirth, const char *word);
 
+#if 0
+#	define LOG(s)	puts(s);
+#else
+#	define LOG(s)
+#endif
+
 //
 static void forth_default_output(char *s)
 {
@@ -127,6 +133,8 @@ static int fth_accept(FirthState *pFirth)
 	int c;
 	FirthNumber count = 0;
 
+	LOG("ACCEPT");
+
 	FirthNumber limit = fth_pop(pFirth);
 	FirthNumber addr = fth_pop(pFirth);
 	
@@ -149,11 +157,25 @@ static int fth_accept(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-// implements WORD - 
+//
+static int fth_fill_tib(FirthState *pFirth)
+{
+	// fill input bufer
+	fth_push(pFirth, (FirthNumber)pFirth->TIB);
+	fth_push(pFirth, sizeof(pFirth->TIB) - 1);
+	fth_accept(pFirth);
+	pFirth->tib_len = fth_pop(pFirth);
+
+	return FTH_TRUE;
+}
+
+// implements WORD - read in a new word with the given delimiter
 // ( delim -- addr )
 static int fth_word(FirthState *pFirth)
 {
 	int c;
+
+	LOG("WORD");
 
 	int delim = fth_pop(pFirth);
 
@@ -190,6 +212,13 @@ static int fth_word(FirthState *pFirth)
 
 	// put addr of word on stack
 	fth_push(pFirth, (FirthNumber)pFirth->IN);
+	
+	//FirthNumber depth = (pFirth->SP - pFirth->stack);
+	//firth_printf(pFirth, "Word: %s, stack(%d)\n", pFirth->IN, depth);
+
+	//if (0 == strcmp(pFirth->IN, ";")) {
+	//	LOG("semicolon");
+	//}
 
 	// advance IN pointer to beyond the word
 	pFirth->IN = p + 1;
@@ -442,8 +471,42 @@ static DictionaryEntry *fth_tick_internal(FirthState *pFirth, const char *word)
 	return NULL;
 }
 
+//
+static int fth_interpreter_tick(FirthState *pFirth)
+{
+	// get a WORD from input
+	fth_push(pFirth, ' ');
+	fth_word(pFirth);
+
+	char *word = (char*)fth_peek(pFirth);
+
+	// if buffer is empty return
+	if (0 == *word)
+	{
+		fth_push(pFirth, FTH_FALSE);
+		return FTH_FALSE;
+	}
+
+	// if word exists, put its xt on the stack
+	DictionaryEntry *pDict = (DictionaryEntry*)pFirth->head;
+
+	for (; pDict; pDict = pDict->next)
+	{
+		if (!pDict->flags.hidden && !_stricmp(pDict->name, word))
+		{
+			// word found so pop the input addr and push xt for the word onto the stack
+			fth_pop(pFirth);
+			fth_push(pFirth, (FirthNumber)pDict);
+			return fth_push(pFirth, FTH_TRUE);
+		}
+	}
+
+	fth_push(pFirth, FTH_FALSE);
+	return FTH_FALSE;
+}
+
 // implements TICK word
-// Note: if word not found in dictionary leave the input addr on the stack
+// Note: if word not found in dictionary, leaves the input addr on the stack
 static int fth_tick(FirthState *pFirth)
 {
 	// get a WORD from input
@@ -531,11 +594,17 @@ static int fth_semicolon(FirthState *pFirth)
 // implementes COMPILE - compile the words in a new colon definition
 static int fth_compile(FirthState *pFirth)
 {
+	LOG("COMPILE");
+
 	// inner interpreter loop
 	while (pFirth->compiling)
 	{
+		// if result is TRUE then there is an xt on the stack
+		// otherwise the addr of an input that is not a WORD
+		FirthNumber result = fth_pop(pFirth);
+
 		// get the next word
-		if (fth_tick(pFirth))
+		if (result == FTH_TRUE)
 		{
 			// get the xt of the word to compile
 			DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
@@ -554,11 +623,23 @@ static int fth_compile(FirthState *pFirth)
 		}
 		else
 		{
+			// the addr of the "word" is now on the stack
 			char *input = (char*)fth_peek(pFirth);
-			if (isInteger(input))
+
+			if (input[0] == '\0')
+			{
+				// empty string on the stack, discard it!!
+				fth_pop(pFirth);
+
+				// (re-)fill input bufer
+				fth_fill_tib(pFirth);
+			} 
+			else if (isInteger(input))
 			{
 				DictionaryEntry *xt = fth_tick_internal(pFirth, "LITERAL");
 				fth_write_to_cp(pFirth, (FirthNumber)xt);
+				
+				// pop the addr off the stack, convert it to a number and put back on stack
 				fth_number(pFirth);
 				fth_write_to_cp(pFirth, fth_pop(pFirth));
 			}
@@ -566,21 +647,36 @@ static int fth_compile(FirthState *pFirth)
 			{
 				DictionaryEntry *xt = fth_tick_internal(pFirth, "FLITERAL");
 				fth_write_to_cp(pFirth, (FirthNumber)xt);
+				
+				// pop the addr off the stack, convert it to a number and put back on stack
 				fth_number(pFirth);
 				FirthFloat f = fth_popf(pFirth);
 				fth_write_to_cp(pFirth, *(int*)&f);
 			}
 			else
+			{
+				// unknown WORD
+				// TODO - stop compiling?
+				char *s = (char*)fth_pop(pFirth);
+				firth_printf(pFirth, "%s ?\n", s);
 				break;
+			}
 		}
+
+		// look for the next word
+		if (pFirth->compiling)
+			fth_interpreter_tick(pFirth);
 	}
 
 	return FTH_TRUE;
 }
 
 // implements EXECUTE - execute the xt on TOS
+// ( xt -- )
 static int fth_execute(FirthState *pFirth)
 {
+	LOG("EXECUTE");
+
 	DictionaryEntry *pDict = (DictionaryEntry*)fth_peek(pFirth);
 
 	// do not execute compile only words
@@ -617,6 +713,8 @@ static int fth_create(FirthState *pFirth)
 // implements QUIT
 static int fth_quit(FirthState *pFirth)
 {
+	LOG("QUIT");
+
 	// show user prompt
 	if (pFirth->BLK == stdin)
 		pFirth->firth_print("firth>");
@@ -625,31 +723,36 @@ static int fth_quit(FirthState *pFirth)
 	assert(pFirth->RP == pFirth->return_stack);
 
 	// fill input bufer
-	fth_push(pFirth, (FirthNumber)pFirth->TIB);
-	fth_push(pFirth, sizeof(pFirth->TIB) - 1);
-	fth_accept(pFirth);
-	pFirth->tib_len = fth_pop(pFirth);
+	fth_fill_tib(pFirth);
 
 	while (true)
 	{
 		// read input and try to find a word
-		if (fth_tick(pFirth))
-		{
-			// the WORD exists, execute it
-			FirthNumber f = fth_execute(pFirth);
-			if (!f)
-				return FTH_TRUE;
+		fth_interpreter_tick(pFirth);
 
-			// if we are now compiling continue
-			if (pFirth->compiling)
-				fth_compile(pFirth);
-		}
-		else if (!fth_number(pFirth))
+		if (pFirth->compiling)
 		{
-			char *s = (char*)fth_pop(pFirth);
-			if (0 != *s)
-				firth_printf(pFirth, "%s ?\n", s);
-			break;
+			fth_compile(pFirth);
+		}
+		else
+		{
+			FirthNumber result = fth_pop(pFirth);
+
+			if (result == FTH_TRUE)
+			{
+				// TICK found an existing word, 
+				// the xt is on the stack, EXECUTE it
+				fth_execute(pFirth);
+			}
+			else if (!fth_number(pFirth))
+			{
+				char *s = (char*)fth_pop(pFirth);
+				
+				// if there was text but we don't understand it
+				if (0 != *s)
+					firth_printf(pFirth, "%s ?\n", s);
+				break;
+			}
 		}
 	}
 
@@ -1217,6 +1320,7 @@ static const char *immediate_words[] =
 	"(",
 	"IF",
 	"THEN",
+	"ENDIF",
 	"ELSE",
 	"BEGIN",
 	"AGAIN",
@@ -1224,6 +1328,7 @@ static const char *immediate_words[] =
 	"WHILE",
 	"REPEAT",
 	"DO",
+	"FOR",
 	"LOOP",
 	"+LOOP",
 //	"POSTPONE",
@@ -1239,6 +1344,7 @@ static const char *compile_only_words[] =
 	"BRANCH?",
 	"IF",
 	"THEN",
+	"ENDIF",
 	"ELSE",
 	"BEGIN",
 	"AGAIN",
@@ -1246,6 +1352,7 @@ static const char *compile_only_words[] =
 	"WHILE",
 	"REPEAT",
 	"DO",
+	"FOR",
 	"LOOP",
 	"+LOOP",
 	"I",
@@ -1326,6 +1433,7 @@ FirthState *fth_create_state()
 	fth_define_word_var(pFirth, "SP", (FirthNumber*)pFirth->SP);
 	fth_define_word_var(pFirth, ">IN", (FirthNumber*)pFirth->IN);
 	fth_define_word_var(pFirth, "TIB", (FirthNumber*)pFirth->TIB);
+	fth_define_word_var(pFirth, "#TIB", (FirthNumber*)pFirth->tib_len);
 
 	fth_define_word_var(pFirth, "ENV.MAXS", (FirthNumber*)&pFirth->maxs);
 	fth_define_word_var(pFirth, "ENV.MAXR", (FirthNumber*)&pFirth->maxr);
@@ -1524,5 +1632,7 @@ int fth_define_word_fvar(FirthState *pFirth, const char *name, FirthFloat *pVar)
 // C API for the outer interpreter
 int fth_update(FirthState *pFirth)
 {
+	LOG("UPDATE");
+
 	return fth_quit(pFirth);
 }
