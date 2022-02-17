@@ -17,12 +17,12 @@ var StackDepth \ saved stack DEPTH
 
 \ report the test number to a numeric output device
 : T.
- . \ output last successful test #
+    . \ output last successful test #
 ;
 
 \ halt the system
 : Test-halt
-    BEGIN AGAIN
+    BEL BEGIN AGAIN
 ;
 
 \ compute h1 by hashing x1 and h0
@@ -64,10 +64,10 @@ var StackDepth \ saved stack DEPTH
 : == ( hy x1 x2 ... xn -- )
     DEPTH StackDepth @ - ( hy x1 x2 .. xn Nx )
     hash-n ( hy hx )
-    = 0= IF Test-halt ELSE BL CHECKMARK ENDIF CR
+    = 0= IF Test-halt ELSE BL EMIT CHECKMARK ENDIF CR LF
 ;
 
 \ end of test group
 : Test-end ( -- )
-    ." All tests passed! " \ 65535 ( 0xFFFF ) T.
+    ." All tests passed!" \ 65535 ( 0xFFFF ) T.
 ;

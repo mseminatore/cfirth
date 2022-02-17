@@ -348,6 +348,7 @@ static const FirthWordSet core_lib[] =
 	{ "MOD", fth_mod },
 	{ "/MOD", fth_div_mod },
 	{ "*/", fth_mul_div },
+	{ "POW", fth_pow },
 
 	// relational
 	{ "=", fth_equal },

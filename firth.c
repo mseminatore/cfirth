@@ -1129,10 +1129,17 @@ static int fth_ploop(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-// run-time behavior of .S
+// run-time behavior of (.")
 static int fth_dot_quote_imp(FirthState *pFirth)
 {
+	firth_printf(pFirth, "%s\n", (char*)pFirth->IP);
 
+	// advance IP past string
+	char *p = (char*)pFirth->IP;
+	p += strlen((char*)pFirth->IP) + 1;
+	pFirth->IP = (FirthNumber*)p;
+
+	return FTH_TRUE;
 }
 
 // implements ."
@@ -1146,17 +1153,13 @@ static int fth_dot_quote(FirthState *pFirth)
 
 	if (pFirth->compiling)
 	{
-		char *p = pFirth->CP;
-		while (*p)
-			*pFirth->CP++ = *p++;
-		*p = 0;
+		fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "(.\")"));
+		while (*pStr)
+			*pFirth->CP++ = *pStr++;
+		*pFirth->CP++ = 0;
 	}
 	else
-		pFirth->firth_print(pStr);
-
-	//w.data_addr = (int)strdup(lval);
-//	emit(OP_SPRINT);
-//	emit((FirthInstruction)_strdup(lval));
+		firth_printf(pFirth, "%s\n", pStr);
 
 	return FTH_TRUE;
 }
@@ -1222,6 +1225,8 @@ static const FirthWordSet basic_lib[] =
 	{ "LOOP", fth_loop },
 	{ "+LOOP", fth_ploop },
 	{ ".\"", fth_dot_quote },
+	{ "(.\")", fth_dot_quote_imp },
+
 //	{ "POSTPONE", fth_postpone },
 
 	{ "BRANCH?", fth_conditional_branch },
@@ -1324,6 +1329,9 @@ static const char *immediate_words[] =
 	"FOR",
 	"LOOP",
 	"+LOOP",
+	"(",
+	"\\",
+	".\"",
 //	"POSTPONE",
 	NULL
 };
@@ -1418,7 +1426,7 @@ FirthState *fth_create_state()
 	/* none yet! */
 
 	// setup hidden words
-	/* none yet! */
+	fth_make_hidden(pFirth, "(.\")");
 
 	// setup variables
 	fth_define_word_var(pFirth, "CP", (FirthNumber*)pFirth->CP);

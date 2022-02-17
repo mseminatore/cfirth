@@ -6,15 +6,14 @@
 
 ( --  c)
 32 CONSTANT BL
-9 CONSTANT TAB
-10 CONSTANT LF
-7 CONSTANT BEL
-13 CONSTANT CR
 
 ( -- )
 : SPACE BL EMIT ;
-: BEEP BEL EMIT ;
-: NEWLINE CR EMIT LF EMIT ;
+: CR 13 EMIT ;
+: LF 10 EMIT ;
+: TAB 9 EMIT ;
+: BEL 7 EMIT ;
+: NEWLINE CR LF ;
 
 \ toggles for hex/decimal output
 : HEX 1 ENV.HEX ! ;
