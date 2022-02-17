@@ -33,6 +33,9 @@
 ( n -- n )
 \ : CELLS 4 * ;
 
+( -- )
+: CHARS ;
+
 ( n1 n2 -- n1 n2 n1 n2 )
 : 2DUP OVER OVER ;
 

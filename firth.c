@@ -213,13 +213,6 @@ static int fth_word(FirthState *pFirth)
 	// put addr of word on stack
 	fth_push(pFirth, (FirthNumber)pFirth->IN);
 	
-	//FirthNumber depth = (pFirth->SP - pFirth->stack);
-	//firth_printf(pFirth, "Word: %s, stack(%d)\n", pFirth->IN, depth);
-
-	//if (0 == strcmp(pFirth->IN, ";")) {
-	//	LOG("semicolon");
-	//}
-
 	// advance IN pointer to beyond the word
 	pFirth->IN = p + 1;
 
