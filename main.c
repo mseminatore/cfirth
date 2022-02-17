@@ -31,11 +31,6 @@ int main(int argc, char *argv[])
 
 	banner(pFirth);
 
-#if FTH_INCLUDE_FLOAT == 1
-	// load (optional) floating point libraries
-	firth_register_float(pFirth);
-#endif
-
 	// REPL loop
 	while (!pFirth->halted)
 	{

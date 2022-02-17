@@ -358,7 +358,7 @@ static int fth_var_imp(FirthState *pFirth)
 {
 	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
 
-	int addr = (int)fth_body_internal(pDict);
+	FirthNumber addr = (int)fth_body_internal(pDict);
 	fth_push(pFirth, addr);
 
 	return FTH_TRUE;
@@ -370,7 +370,7 @@ static int fth_user_var_imp(FirthState *pFirth)
 	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
 
 	FirthNumber **ppVar = (FirthNumber**)fth_body_internal(pDict);
-	fth_push(pFirth, (FirthNumber)**ppVar);
+	fth_push(pFirth, (FirthNumber)*ppVar);
 
 	return FTH_TRUE;
 }
@@ -1429,6 +1429,7 @@ FirthState *fth_create_state()
 	fth_make_hidden(pFirth, "(.\")");
 
 	// setup variables
+	fth_define_word_var(pFirth, "C0", (FirthNumber*)pFirth->dictionary_base);
 	fth_define_word_var(pFirth, "CP", (FirthNumber*)pFirth->CP);
 	fth_define_word_var(pFirth, "RP", (FirthNumber*)pFirth->RP);
 	fth_define_word_var(pFirth, "SP", (FirthNumber*)pFirth->SP);
@@ -1442,6 +1443,11 @@ FirthState *fth_create_state()
 
 	// load the core library
 	load_helper(pFirth, "core.fth");
+
+#if FTH_INCLUDE_FLOAT == 1
+	// load (optional) floating point libraries
+	firth_register_float(pFirth);
+#endif
 
 	return pFirth;
 }
