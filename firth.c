@@ -377,7 +377,7 @@ static int fth_user_var_imp(FirthState *pFirth)
 	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
 
 	FirthNumber **ppVar = (FirthNumber**)fth_body_internal(pDict);
-	fth_push(pFirth, (FirthNumber)*ppVar);
+	fth_push(pFirth, (FirthNumber)**ppVar);
 
 	return FTH_TRUE;
 }
