@@ -1277,7 +1277,7 @@ static const FirthWordSet basic_lib[] =
 	{ "R@", fth_r_fetch },
 	{ "R>", fth_from_r },
 	{ ">R", fth_to_r },
-	{ "LOAD", fth_load },
+	{ "INCLUDE", fth_load },
 	{ "EXECUTE", fth_execute },
 	{ "MARKER", fth_marker },
 	{ "QUIT", fth_quit},

@@ -174,15 +174,15 @@ static const FirthWordSet myWords[] =
 // examples of calling Firth from native code
 void callFirth(Firth *pFirth)
 {
-    // fth_exec_word is a set of convenience methods to push 
-    // 1, 2, or 3 parameters on stack and execute a word
-    fth_exec_word2(pFirth, "+", 1, 2);
-	
-	// execute any defined word, no passed parameters
-    fth_exec_word(pFirth, ".");
+        // fth_exec_word is a set of convenience methods to push 
+        // 1, 2, or 3 parameters on stack and execute a word
+        fth_exec_word2(pFirth, "+", 1, 2);
 
-    // parse and execute a line of text
-    fth_parse_string(pFirth, "CP @ .");
+        // execute any defined word, no passed parameters
+        fth_exec_word(pFirth, ".");
+
+        // parse and execute a line of text
+        fth_parse_string(pFirth, "CP @ .");
 }
 
 int main()
