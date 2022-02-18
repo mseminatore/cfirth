@@ -1,3 +1,5 @@
+[![MSBuild](https://github.com/mseminatore/cfirth/actions/workflows/msbuild.yml/badge.svg)](https://github.com/mseminatore/cfirth/actions/workflows/msbuild.yml)
+
 # Welcome to C Firth!
 **Firth** is an experimental programming language heavily inspired by Forth.
 Its goals are to be small, fast and efficient, portable and embeddable.
