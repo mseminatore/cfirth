@@ -12,10 +12,23 @@ static myPrint(char *s)
 	fputs(s, stdout);
 }
 
+// examples of calling Firth from C
+static void callFirth(FirthState *pFirth)
+{
+	// exec_word is a set of convenience functions to push 
+	// 0, 1, 2, or 3 parameters on stack and execute a word
+	fth_exec_word(pFirth, "words");
+
+	fth_exec_word2(pFirth, "+", 1, 2);
+
+	// parse, compile and execute a linen of text
+	fth_parse_string(pFirth, ": star 42 emit ;");
+}
+
 //
 void banner(FirthState *pFirth)
 {
-	pFirth->firth_print("Welcome to CFirth! Copyright 2022 by Mark Seminatore\n");
+	pFirth->firth_print("Welcome to C-Firth! Copyright 2022 by Mark Seminatore\n");
 	pFirth->firth_print("See LICENSE file for usage rights and obligations.\n");
 	pFirth->firth_print("Type 'bye' to quit.\n");
 }

@@ -43,6 +43,7 @@
 # Output files
 Debug/
 .vs/
+Release/
 
 # Debug files
 *.dSYM/

@@ -686,7 +686,7 @@ static int fth_execute(FirthState *pFirth)
 	}
 
 	// execute the word
-	FirthFunc f = (FirthFunc)pDict->code_pointer;
+	FirthFunc f = pDict->code_pointer;
 	return f(pFirth);
 }
 
@@ -703,20 +703,10 @@ static int fth_create(FirthState *pFirth)
 	return fth_make_dict_entry(pFirth, newWord);
 }
 
-// implements QUIT
-static int fth_quit(FirthState *pFirth)
+// implements INTERPRET
+static int fth_interpret(FirthState *pFirth)
 {
-	LOG("QUIT");
-
-	// show user prompt
-	if (pFirth->BLK == stdin)
-		pFirth->firth_print("firth>");
-
-	// TODO - reset return stacks?
-	assert(pFirth->RP == pFirth->return_stack);
-
-	// fill input bufer
-	fth_fill_tib(pFirth);
+	LOG("INTERPRET");
 
 	while (true)
 	{
@@ -740,7 +730,7 @@ static int fth_quit(FirthState *pFirth)
 			else if (!fth_number(pFirth))
 			{
 				char *s = (char*)fth_pop(pFirth);
-				
+
 				// if there was text but we don't understand it
 				if (0 != *s)
 					firth_printf(pFirth, "%s ?\n", s);
@@ -748,6 +738,26 @@ static int fth_quit(FirthState *pFirth)
 			}
 		}
 	}
+
+	return FTH_TRUE;
+}
+
+// implements QUIT
+static int fth_quit(FirthState *pFirth)
+{
+	LOG("QUIT");
+
+	// show user prompt
+	if (pFirth->BLK == stdin)
+		pFirth->firth_print("firth>");
+
+	// TODO - reset return stacks?
+	assert(pFirth->RP == pFirth->return_stack);
+
+	// fill input bufer
+	fth_fill_tib(pFirth);
+
+	fth_interpret(pFirth);
 
 	if (pFirth->BLK == stdin)
 		pFirth->firth_print(" ok\n");
@@ -1270,13 +1280,14 @@ static const FirthWordSet basic_lib[] =
 	{ "LOAD", fth_load },
 	{ "EXECUTE", fth_execute },
 	{ "MARKER", fth_marker },
-	{ "INTERPRET", fth_quit},
+	{ "QUIT", fth_quit},
 	{ "NUMBER", fth_number },
 	{ "'", fth_tick },
 	{ ",", fth_comma },
 	{ "WORD", fth_word },
 
 	{ "COMPILE", fth_compile },
+	{ "INTERPRET", fth_interpret },
 	{ "IMMEDIATE", fth_immediate },
 	{ "HIDE", fth_hide },
 	{ "[", fth_stop_compile },
@@ -1508,7 +1519,7 @@ int fth_make_compile_only(FirthState* pFirth, const char *word)
 	return FTH_TRUE;
 }
 
-//
+// C API to mark the given word as requiring the xt on the stack
 int fth_make_xt_required(FirthState* pFirth, const char *word)
 {
 	DictionaryEntry *pEntry = fth_tick_internal(pFirth, word);
@@ -1647,4 +1658,54 @@ int fth_update(FirthState *pFirth)
 	LOG("UPDATE");
 
 	return fth_quit(pFirth);
+}
+
+// C API for parsing/compiling/executing a string of Firth
+int fth_parse_string(FirthState *pFirth, const char *str)
+{
+	if (!str)
+		return FTH_FALSE;
+
+	int len = strlen(str);
+	if (len > FTH_MAX_WORD_NAME)
+		return FTH_FALSE;
+
+	strcpy(pFirth->TIB, str);
+	pFirth->tib_len = len;
+
+	fth_interpret(pFirth);
+
+	return FTH_TRUE;
+}
+
+// C API for executing an existing word
+int fth_exec_word(FirthState *pFirth, const char *word)
+{
+	DictionaryEntry *pEntry = fth_tick_internal(pFirth, word);
+	fth_push(pFirth, (FirthNumber)pEntry);
+	return fth_execute(pFirth);
+}
+
+// C API convenience function for executing words
+int fth_exec_word1(FirthState *pFirth, const char *word, FirthNumber n) 
+{ 
+	fth_push(pFirth, n); 
+	return fth_exec_word(pFirth, word);
+}
+
+// C API convenience function for executing words
+int fth_exec_word2(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2)
+{
+	fth_push(pFirth, n1);
+	fth_push(pFirth, n2);
+	return fth_exec_word(pFirth, word);
+}
+
+// C API convenience function for executing words
+int fth_exec_word3(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2, FirthNumber n3)
+{
+	fth_push(pFirth, n1);
+	fth_push(pFirth, n2);
+	fth_push(pFirth, n3);
+	return fth_exec_word(pFirth, word);
 }
