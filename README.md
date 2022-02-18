@@ -4,6 +4,14 @@
 **Firth** is an experimental programming language heavily inspired by Forth.
 Its goals are to be small, fast and efficient, portable and embeddable.
 
+Note that this is the C version of Firth. There is also an earlier C++ version
+available [here](https://github.com/mseminatore/firth). The main differences
+between the two versions are:
+
+* This version is written in C
+* The C version uses a traditional linked list dictionary
+* The C version uses subroutine threading vs. bytecode interpreter
+
 > If you are new to Forth, you can learn a lot of the basics at 
 > [Easy Forth](https://skilldrick.github.io/easyforth/). I also highly recommend
 > [Starting Forth](https://www.forth.com/starting-forth) by Leo Brodie of
