@@ -1180,8 +1180,8 @@ static int fth_postpone(FirthState *pFirth)
 
 	// find the word in the dictionary
 	char *oldWordName = (char*)fth_pop(pFirth);
-	DictionaryEntry *pOldWord = fth_tick_internal(pFirth, oldWordName);
-	if (!pOldWord)
+	DictionaryEntry *pDict = fth_tick_internal(pFirth, oldWordName);
+	if (!pDict)
 	{
 		// old word not found!
 		pFirth->firth_print(oldWordName);
@@ -1190,7 +1190,8 @@ static int fth_postpone(FirthState *pFirth)
 	}
 
 	// append the compilation semantics
-	fth_write_to_cp(pFirth, (FirthNumber)pOldWord);
+	// write instruction to new colon word definition
+	fth_write_to_cp(pFirth, (FirthNumber)pDict);
 
 	return FTH_TRUE;
 }
@@ -1318,7 +1319,10 @@ static const char *immediate_words[] =
 	"(",
 	"IF",
 	"THEN",
+#if FTH_FIRTH_SYNTAX == 1
 	"ENDIF",
+	"FOR",
+#endif
 	"ELSE",
 	"BEGIN",
 	"AGAIN",
@@ -1326,7 +1330,6 @@ static const char *immediate_words[] =
 	"WHILE",
 	"REPEAT",
 	"DO",
-	"FOR",
 	"LOOP",
 	"+LOOP",
 	"(",
@@ -1345,7 +1348,10 @@ static const char *compile_only_words[] =
 	"BRANCH?",
 	"IF",
 	"THEN",
+#if FTH_FIRTH_SYNTAX == 1
 	"ENDIF",
+	"FOR",
+#endif
 	"ELSE",
 	"BEGIN",
 	"AGAIN",
@@ -1353,7 +1359,6 @@ static const char *compile_only_words[] =
 	"WHILE",
 	"REPEAT",
 	"DO",
-	"FOR",
 	"LOOP",
 	"+LOOP",
 	"I",
