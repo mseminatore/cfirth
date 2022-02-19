@@ -946,15 +946,33 @@ static int load_helper(FirthState *pFirth, char *filename)
 	return FTH_TRUE;
 }
 
-// implements LOAD
+// implements INCLUDE
 // ( -- )
 static int fth_load(FirthState *pFirth)
 {
+	char include_file[FTH_MAX_PATH];
+	
 	// get the filename
 	fth_push(pFirth, ' ');
 	fth_word(pFirth);
 
 	char *filename = (char*)fth_pop(pFirth);
+
+	// see if filename was already loaded
+	sprintf(include_file, "%s-included", filename);
+	DictionaryEntry *pEntry = fth_tick_internal(pFirth, include_file);
+
+	if (pEntry)
+	{
+		pFirth->firth_print("File already loaded.\n");
+		return FTH_TRUE;
+	}
+
+	fth_make_dict_entry(pFirth, include_file);
+
+	pFirth->head->code_pointer = fth_marker_imp;
+	pFirth->head->flags.xt_on_stack = 1;
+
 	return load_helper(pFirth, filename);
 }
 
@@ -1445,13 +1463,13 @@ FirthState *fth_create_state()
 	fth_make_hidden(pFirth, "(.\")");
 
 	// setup variables
-	fth_define_word_var(pFirth, "C0", (FirthNumber*)pFirth->dictionary_base);
-	fth_define_word_var(pFirth, "CP", (FirthNumber*)pFirth->CP);
-	fth_define_word_var(pFirth, "RP", (FirthNumber*)pFirth->RP);
-	fth_define_word_var(pFirth, "SP", (FirthNumber*)pFirth->SP);
-	fth_define_word_var(pFirth, ">IN", (FirthNumber*)pFirth->IN);
-	fth_define_word_var(pFirth, "TIB", (FirthNumber*)pFirth->TIB);
-	fth_define_word_var(pFirth, "#TIB", (FirthNumber*)pFirth->tib_len);
+	fth_define_word_var(pFirth, "C0", (FirthNumber*)&pFirth->dictionary_base);
+	fth_define_word_var(pFirth, "CP", (FirthNumber*)&pFirth->CP);
+	fth_define_word_var(pFirth, "RP", (FirthNumber*)&pFirth->RP);
+	fth_define_word_var(pFirth, "SP", (FirthNumber*)&pFirth->SP);
+	fth_define_word_var(pFirth, ">IN", (FirthNumber*)&pFirth->IN);
+	fth_define_word_var(pFirth, "TIB", (FirthNumber*)&pFirth->TIB);
+	fth_define_word_var(pFirth, "#TIB", (FirthNumber*)&pFirth->tib_len);
 
 	fth_define_word_var(pFirth, "ENV.MAXS", (FirthNumber*)&pFirth->maxs);
 	fth_define_word_var(pFirth, "ENV.MAXR", (FirthNumber*)&pFirth->maxr);
@@ -1708,4 +1726,14 @@ int fth_exec_word3(FirthState *pFirth, const char *word, FirthNumber n1, FirthNu
 	fth_push(pFirth, n2);
 	fth_push(pFirth, n3);
 	return fth_exec_word(pFirth, word);
+}
+
+// C API to retrieve address of Firth Word variable
+FirthNumber *fth_get_var(FirthState *pFirth, const char *word)
+{
+	DictionaryEntry *pEntry = fth_tick_internal(pFirth, word);
+	if (!pEntry)
+		return NULL;
+
+	return fth_body_internal(pEntry);
 }

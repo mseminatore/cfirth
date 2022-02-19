@@ -125,3 +125,4 @@ int fth_exec_word(FirthState *pFirth, const char *str);
 int fth_exec_word1(FirthState *pFirth, const char *word, FirthNumber n);
 int fth_exec_word2(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2);
 int fth_exec_word3(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2, FirthNumber n3);
+FirthNumber *fth_get_var(FirthState *pFirth, const char *word);
