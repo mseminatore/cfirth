@@ -120,6 +120,39 @@ static FirthNumber fth_r_fetch(FirthState *pFirth)
 	return fth_push(pFirth, *(pFirth->RP - 1));
 }
 
+//
+static FILE *fth_pop_file(FirthState *pFirth)
+{
+	if (pFirth->ISP <= 1)
+	{
+		pFirth->firth_print("Input Stack underflow!\n");
+		return stdin;	// default to stdin
+	}
+
+	pFirth->ISP--;
+
+	// close previous file
+	fclose(pFirth->input_stack[pFirth->ISP]);
+	pFirth->input_stack[pFirth->ISP] = NULL;	// zero out the closed file ptr
+
+	return pFirth->input_stack[pFirth->ISP - 1];
+}
+
+//
+static int fth_push_file(FirthState *pFirth, FILE *f)
+{
+	if (pFirth->ISP + 1 > FTH_INPUT_STACK_SIZE)
+	{
+		pFirth->firth_print("Input Stack overflow!\n");
+		return FTH_FALSE;
+	}
+
+	pFirth->input_stack[pFirth->ISP++] = f;
+	pFirth->BLK = f;
+
+	return FTH_TRUE;
+}
+
 // implements KEY - get a new key from the terminal
 static int fth_key(FirthState *pFirth)
 {
@@ -195,16 +228,19 @@ static int fth_word(FirthState *pFirth)
 		c = *p;
 	}
 
+	// handle End-Of-File
 	if (c == EOF)
 	{
-		if (pFirth->BLK != stdin)
-		{
-			// close previous file
-			fclose(pFirth->BLK);
+		pFirth->BLK = fth_pop_file(pFirth);
 
-			// set input to terminal
-			pFirth->BLK = stdin;
-		}
+		//if (pFirth->BLK != stdin)
+		//{
+		//	// close previous file
+		//	fclose(pFirth->BLK);
+
+		//	// set input to terminal
+		//	pFirth->BLK = stdin;
+		//}
 	}
 
 	// make word in TIB asciiz
@@ -937,6 +973,39 @@ static int fth_backslash(FirthState *pFirth)
 	return fth_pop(pFirth);
 }
 
+
+// return pointer to the base filename without path
+static const char *fth_basename(const char *s)
+{
+	if (!strchr(s, FTH_DIR_SEPARATOR))
+		return s;
+
+	const char *p = s + strlen(s);
+
+	for (; p != s; p--)
+		if (*p == FTH_DIR_SEPARATOR)
+		{
+			p++;
+			break;
+		}
+	return p;
+}
+
+// return pointer to the path name
+static char *fth_dirname(char *s)
+{
+	if (!strchr(s, FTH_DIR_SEPARATOR))
+		return ".";
+
+	char *p = (char*)fth_basename(s);
+	if (p == s)
+		return s;
+
+	p--;
+	*p = 0;
+	return s;
+}
+
 // helper for LOAD
 // ( -- )
 static int load_helper(FirthState *pFirth, char *filename)
@@ -944,11 +1013,11 @@ static int load_helper(FirthState *pFirth, char *filename)
 	FILE *f = fopen(filename, "rt");
 	if (!f)
 	{
-		pFirth->firth_print("File not found.\n");
+		firth_printf(pFirth, "File (%s) not found.\n", filename);
 		return FTH_FALSE;
 	}
 
-	pFirth->BLK = f;
+	fth_push_file(pFirth, f);
 	
 	return FTH_TRUE;
 }
@@ -971,7 +1040,7 @@ static int fth_load(FirthState *pFirth)
 
 	if (pEntry)
 	{
-		pFirth->firth_print("File already loaded.\n");
+		firth_printf(pFirth, "File (%s) already loaded.\n", filename);
 		return FTH_TRUE;
 	}
 
@@ -1467,7 +1536,9 @@ FirthState *fth_create_state()
 	pFirth->maxr = 0;
 	pFirth->maxs = 0;
 
-	pFirth->BLK = stdin;
+	pFirth->input_stack[0] = stdin;
+	pFirth->ISP = 0;
+	pFirth->BLK = pFirth->input_stack[pFirth->ISP++];
 
 	// register built-in words
 	fth_register_wordset(pFirth, basic_lib);

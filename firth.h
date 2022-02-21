@@ -56,6 +56,8 @@ struct FirthState
 	BYTE *dictionary_base;	// beginning of dictionary memory
 
 	FILE *BLK;
+	FILE *input_stack[FTH_INPUT_STACK_SIZE];
+	int ISP;	// input stack pointer
 
 	FirthNumber hexmode;
 	FirthNumber maxr;

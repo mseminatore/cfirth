@@ -36,6 +36,9 @@
 // Adjust this to change the default return stack size
 #define FTH_RETURN_STACK_SIZE 512
 
+// Adjust this to change the supported level of nested includes
+#define FTH_INPUT_STACK_SIZE 32
+
 // Set this to zero to remove all float support
 #ifndef FTH_INCLUDE_FLOAT
 #	define FTH_INCLUDE_FLOAT 1
