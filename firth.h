@@ -47,6 +47,12 @@ struct DictionaryEntry
 };
 #pragma pack(pop)
 
+typedef struct
+{
+	FILE *fd;
+	char dirname[FTH_MAX_PATH];
+} InputNode;
+
 //
 struct FirthState
 {
@@ -56,7 +62,7 @@ struct FirthState
 	BYTE *dictionary_base;	// beginning of dictionary memory
 
 	FILE *BLK;
-	FILE *input_stack[FTH_INPUT_STACK_SIZE];
+	InputNode input_stack[FTH_INPUT_STACK_SIZE];
 	int ISP;	// input stack pointer
 
 	FirthNumber hexmode;

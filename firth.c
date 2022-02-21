@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <assert.h>
+#include <direct.h>
 
 #include "firth.h"
 
@@ -120,6 +121,38 @@ static FirthNumber fth_r_fetch(FirthState *pFirth)
 	return fth_push(pFirth, *(pFirth->RP - 1));
 }
 
+// return pointer to the base filename without path
+static const char *fth_basename(const char *s)
+{
+	if (!strchr(s, FTH_DIR_SEPARATOR))
+		return s;
+
+	const char *p = s + strlen(s);
+
+	for (; p != s; p--)
+		if (*p == FTH_DIR_SEPARATOR)
+		{
+			p++;
+			break;
+		}
+	return p;
+}
+
+// return pointer to the path name
+static char *fth_dirname(char *s)
+{
+	if (!strchr(s, FTH_DIR_SEPARATOR))
+		return ".";
+
+	char *p = (char*)fth_basename(s);
+	if (p == s)
+		return s;
+
+	p--;
+	*p = 0;
+	return s;
+}
+
 //
 static FILE *fth_pop_file(FirthState *pFirth)
 {
@@ -132,22 +165,41 @@ static FILE *fth_pop_file(FirthState *pFirth)
 	pFirth->ISP--;
 
 	// close previous file
-	fclose(pFirth->input_stack[pFirth->ISP]);
-	pFirth->input_stack[pFirth->ISP] = NULL;	// zero out the closed file ptr
+	fclose(pFirth->input_stack[pFirth->ISP].fd);
+	pFirth->input_stack[pFirth->ISP].fd = NULL;	// zero out the closed file ptr
 
-	return pFirth->input_stack[pFirth->ISP - 1];
+	_chdir(pFirth->input_stack[pFirth->ISP].dirname);
+	pFirth->input_stack[pFirth->ISP].dirname[0] = '\0';
+
+	return pFirth->input_stack[pFirth->ISP - 1].fd;
 }
 
 //
-static int fth_push_file(FirthState *pFirth, FILE *f)
+static int fth_push_file(FirthState *pFirth, FILE *f, const char *filename)
 {
+	char path[FTH_MAX_PATH];
+	char oldWorkingDir[FTH_MAX_PATH];
+
 	if (pFirth->ISP + 1 > FTH_INPUT_STACK_SIZE)
 	{
 		pFirth->firth_print("Input Stack overflow!\n");
 		return FTH_FALSE;
 	}
 
-	pFirth->input_stack[pFirth->ISP++] = f;
+	// save current working dir
+	_getcwd(oldWorkingDir, sizeof(oldWorkingDir));
+
+	strcpy(path, filename);
+
+	const char *file = fth_basename(path);
+	const char *dir = fth_dirname(path);
+
+	// set new working dir
+	if (strcmp(dir, oldWorkingDir))
+		_chdir(dir);
+
+	pFirth->input_stack[pFirth->ISP].fd = f;
+	strcpy(pFirth->input_stack[pFirth->ISP++].dirname, oldWorkingDir);
 	pFirth->BLK = f;
 
 	return FTH_TRUE;
@@ -232,15 +284,6 @@ static int fth_word(FirthState *pFirth)
 	if (c == EOF)
 	{
 		pFirth->BLK = fth_pop_file(pFirth);
-
-		//if (pFirth->BLK != stdin)
-		//{
-		//	// close previous file
-		//	fclose(pFirth->BLK);
-
-		//	// set input to terminal
-		//	pFirth->BLK = stdin;
-		//}
 	}
 
 	// make word in TIB asciiz
@@ -973,39 +1016,6 @@ static int fth_backslash(FirthState *pFirth)
 	return fth_pop(pFirth);
 }
 
-
-// return pointer to the base filename without path
-static const char *fth_basename(const char *s)
-{
-	if (!strchr(s, FTH_DIR_SEPARATOR))
-		return s;
-
-	const char *p = s + strlen(s);
-
-	for (; p != s; p--)
-		if (*p == FTH_DIR_SEPARATOR)
-		{
-			p++;
-			break;
-		}
-	return p;
-}
-
-// return pointer to the path name
-static char *fth_dirname(char *s)
-{
-	if (!strchr(s, FTH_DIR_SEPARATOR))
-		return ".";
-
-	char *p = (char*)fth_basename(s);
-	if (p == s)
-		return s;
-
-	p--;
-	*p = 0;
-	return s;
-}
-
 // helper for LOAD
 // ( -- )
 static int load_helper(FirthState *pFirth, char *filename)
@@ -1017,7 +1027,7 @@ static int load_helper(FirthState *pFirth, char *filename)
 		return FTH_FALSE;
 	}
 
-	fth_push_file(pFirth, f);
+	fth_push_file(pFirth, f, filename);
 	
 	return FTH_TRUE;
 }
@@ -1536,9 +1546,10 @@ FirthState *fth_create_state()
 	pFirth->maxr = 0;
 	pFirth->maxs = 0;
 
-	pFirth->input_stack[0] = stdin;
+	pFirth->input_stack[0].fd = stdin;
+	strcpy(pFirth->input_stack[0].dirname, ".");
 	pFirth->ISP = 0;
-	pFirth->BLK = pFirth->input_stack[pFirth->ISP++];
+	pFirth->BLK = pFirth->input_stack[pFirth->ISP++].fd;
 
 	// register built-in words
 	fth_register_wordset(pFirth, basic_lib);
