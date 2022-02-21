@@ -584,6 +584,13 @@ static int fth_semicolon(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
+// implements EXIT
+static int fth_exit(FirthState *pFirth)
+{
+	fth_write_to_cp(pFirth, 0);
+	return FTH_TRUE;
+}
+
 // implementes COMPILE - compile the words in a new colon definition
 static int fth_compile(FirthState *pFirth)
 {
@@ -1157,6 +1164,17 @@ static int fth_ploop(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
+// implements UNLOOP
+static int fth_unloop(FirthState *pFirth)
+{
+	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "R>")); // get index from return stack
+	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "R>")); // get limit from return stack
+	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "DROP"));
+	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "DROP"));
+
+	return FTH_TRUE;
+}
+
 // run-time behavior of (.")
 static int fth_dot_quote_imp(FirthState *pFirth)
 {
@@ -1253,6 +1271,9 @@ static const FirthWordSet basic_lib[] =
 	{ "DO", fth_do },
 	{ "LOOP", fth_loop },
 	{ "+LOOP", fth_ploop },
+	{ "UNLOOP", fth_unloop },
+	{ "EXIT", fth_exit },
+
 	{ ".\"", fth_dot_quote },
 	{ "(.\")", fth_dot_quote_imp },
 
@@ -1364,6 +1385,8 @@ static const char *immediate_words[] =
 	"(",
 	"\\",
 	".\"",
+	"UNLOOP",
+	"EXIT",
 //	"POSTPONE",
 	NULL
 };
@@ -1392,7 +1415,9 @@ static const char *compile_only_words[] =
 	"+LOOP",
 	"I",
 	"J",
-//	"POSTPONE",
+	"UNLOOP",
+	"EXIT",
+	//	"POSTPONE",
 	NULL
 };
 
