@@ -14,6 +14,12 @@
 #	include "firth_float.h"
 #endif
 
+#if FTH_CASE_SENSITIVE == 1
+#	define STRING_COMPARE strcmp
+#else
+#	define STRING_COMPARE _stricmp
+#endif
+
 //
 bool true = ~0;
 bool false = 0;
@@ -195,7 +201,7 @@ static int fth_push_file(FirthState *pFirth, FILE *f, const char *filename)
 	const char *dir = fth_dirname(path);
 
 	// set new working dir
-	if (strcmp(dir, oldWorkingDir))
+	if (STRING_COMPARE(dir, oldWorkingDir))
 		_chdir(dir);
 
 	pFirth->input_stack[pFirth->ISP].fd = f;
@@ -533,7 +539,7 @@ static DictionaryEntry *fth_tick_internal(FirthState *pFirth, const char *word)
 
 	for (; pDict; pDict = pDict->next)
 	{
-		if (!_stricmp(pDict->name, word))
+		if (!STRING_COMPARE(pDict->name, word))
 		{
 			// return the dictionary entry
 			return pDict;
@@ -564,7 +570,7 @@ static int fth_interpreter_tick(FirthState *pFirth)
 
 	for (; pDict; pDict = pDict->next)
 	{
-		if (!pDict->flags.hidden && !_stricmp(pDict->name, word))
+		if (!pDict->flags.hidden && !STRING_COMPARE(pDict->name, word))
 		{
 			// word found so pop the input addr and push xt for the word onto the stack
 			fth_pop(pFirth);
@@ -596,7 +602,7 @@ static int fth_tick(FirthState *pFirth)
 
 	for (; pDict; pDict = pDict->next)
 	{
-		if (!pDict->flags.hidden && !_stricmp(pDict->name, word))
+		if (!pDict->flags.hidden && !STRING_COMPARE(pDict->name, word))
 		{
 			// word found so pop the input addr and push xt for the word onto the stack
 			fth_pop(pFirth);
