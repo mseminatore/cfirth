@@ -1,0 +1,4 @@
+: FACTORIAL ( +n1 -- +n2)
+   DUP 2 < IF DROP 1 EXIT THEN
+   DUP 1- RECURSE *
+;
