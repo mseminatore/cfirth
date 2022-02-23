@@ -566,7 +566,7 @@ static int fth_interpreter_tick(FirthState *pFirth)
 	}
 
 	// if word exists, put its xt on the stack
-	DictionaryEntry *pDict = (DictionaryEntry*)pFirth->head;
+	DictionaryEntry *pDict = pFirth->head;
 
 	for (; pDict; pDict = pDict->next)
 	{
@@ -598,7 +598,7 @@ static int fth_tick(FirthState *pFirth)
 		return FTH_FALSE;
 
 	// if word exists, put its xt on the stack
-	DictionaryEntry *pDict = (DictionaryEntry*)pFirth->head;
+	DictionaryEntry *pDict = pFirth->head;
 
 	for (; pDict; pDict = pDict->next)
 	{
@@ -1335,6 +1335,15 @@ static int fth_bracket_tick(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
+// implements RECURSE
+static int fth_recurse(FirthState *pFirth)
+{
+	// call the xt for the current function
+	fth_write_to_cp(pFirth, (FirthNumber)pFirth->head);
+
+	return FTH_TRUE;
+}
+
 // implements
 //static int fth_xxx(FirthState *pFirth)
 //{
@@ -1348,6 +1357,7 @@ static int fth_bracket_tick(FirthState *pFirth)
 //
 static const FirthWordSet basic_lib[] =
 {
+	{ "RECURSE", fth_recurse },
 	{ "BEGIN", fth_begin },
 	{ "AGAIN", fth_again },
 	{ "UNTIL", fth_until },
@@ -1472,6 +1482,7 @@ static const char *immediate_words[] =
 	".\"",
 	"UNLOOP",
 	"EXIT",
+	"RECURSE",
 //	"POSTPONE",
 	NULL
 };
@@ -1502,7 +1513,8 @@ static const char *compile_only_words[] =
 	"J",
 	"UNLOOP",
 	"EXIT",
-	//	"POSTPONE",
+	"RECURSE",
+//	"POSTPONE",
 	NULL
 };
 
