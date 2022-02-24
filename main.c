@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <Windows.h>
 
 #include "firth.h"
 #include "firth_float.h"
@@ -34,8 +35,35 @@ void banner(FirthState *pFirth)
 }
 
 //
+int setupConsole()
+{
+	// Set output mode to handle virtual terminal sequences
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hOut == INVALID_HANDLE_VALUE)
+	{
+		return GetLastError();
+	}
+
+	DWORD dwMode = 0;
+	if (!GetConsoleMode(hOut, &dwMode))
+	{
+		return GetLastError();
+	}
+
+	dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	if (!SetConsoleMode(hOut, dwMode))
+	{
+		return GetLastError();
+	}
+
+	return 0;
+}
+
+//
 int main(int argc, char *argv[])
 {
+	setupConsole();
+
 	// create a new Firth state object
 	pFirth = fth_create_state();
 

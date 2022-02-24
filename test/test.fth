@@ -13,7 +13,7 @@
 var TestCount \ the current test number
 var StackDepth \ saved stack DEPTH
 
-: CHECKMARK 251 emit ;
+: CHECKMARK TERM.GREEN 251 emit TERM.WHITE ;
 
 \ report the test number to a numeric output device
 : T.
@@ -64,10 +64,10 @@ var StackDepth \ saved stack DEPTH
 : == ( hy x1 x2 ... xn -- )
     DEPTH StackDepth @ - ( hy x1 x2 .. xn Nx )
     hash-n ( hy hx )
-    = 0= IF Test-halt ELSE BL EMIT CHECKMARK ENDIF CR LF
+    = 0= IF Test-halt ELSE BL EMIT CHECKMARK ENDIF CR
 ;
 
 \ end of test group
 : Test-end ( -- )
-    ." All tests passed!" \ 65535 ( 0xFFFF ) T.
+    ." All tests passed!" CR \ 65535 ( 0xFFFF ) T.
 ;

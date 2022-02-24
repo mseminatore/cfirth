@@ -241,7 +241,7 @@ static int fth_accept(FirthState *pFirth)
 	// make sure input string is null terminated
 	memset(p, 0, FTH_MAX_WORD_NAME - (p - pFirth->TIB));
 
-	pFirth->IN = pFirth->TIB;
+	pFirth->INP = pFirth->TIB;
 
 	fth_push(pFirth, count);
 
@@ -271,11 +271,11 @@ static int fth_word(FirthState *pFirth)
 	int delim = fth_pop(pFirth);
 
 	// skip any leading delimiter chars
-	while ((c = *pFirth->IN) == delim)
-		pFirth->IN++;
+	while ((c = *pFirth->INP) == delim)
+		pFirth->INP++;
 
 	// start with the current input pointer
-	char *p = pFirth->IN;
+	char *p = pFirth->INP;
 
 	// at this point c contains a non delimiter character
 
@@ -296,10 +296,10 @@ static int fth_word(FirthState *pFirth)
 	*p = '\0';
 
 	// put addr of word on stack
-	fth_push(pFirth, (FirthNumber)pFirth->IN);
+	fth_push(pFirth, (FirthNumber)pFirth->INP);
 	
 	// advance IN pointer to beyond the word
-	pFirth->IN = p + 1;
+	pFirth->INP = p + 1;
 
 	return FTH_TRUE;
 }
@@ -312,6 +312,13 @@ static int fth_make_dict_entry(FirthState *pFirth, const char *word)
 	if (pEntry)
 	{
 		firth_printf(pFirth, "Note: redefining an existing word (%s).\n", pEntry->name);
+	}
+
+	// check if we are out of memory
+	if (pFirth->CP - pFirth->dictionary_base > FTH_ENV_SIZE)
+	{
+		firth_printf(pFirth, "Failed to create (%s) out of dictionary space!\n", word);
+		return FTH_FALSE;
 	}
 
 	DictionaryEntry *pNewHead = (DictionaryEntry *)pFirth->CP;
@@ -1263,7 +1270,7 @@ static int fth_unloop(FirthState *pFirth)
 // run-time behavior of (.")
 static int fth_dot_quote_imp(FirthState *pFirth)
 {
-	firth_printf(pFirth, "%s\n", (char*)pFirth->IP);
+	firth_printf(pFirth, "%s", (char*)pFirth->IP);
 
 	// advance IP past string
 	char *p = (char*)pFirth->IP;
@@ -1290,7 +1297,7 @@ static int fth_dot_quote(FirthState *pFirth)
 		*pFirth->CP++ = 0;
 	}
 	else
-		firth_printf(pFirth, "%s\n", pStr);
+		firth_printf(pFirth, "%s", pStr);
 
 	return FTH_TRUE;
 }
@@ -1372,7 +1379,7 @@ static const FirthWordSet basic_lib[] =
 	{ ".\"", fth_dot_quote },
 	{ "(.\")", fth_dot_quote_imp },
 
-//	{ "POSTPONE", fth_postpone },
+	//{ "POSTPONE", fth_postpone },
 
 	{ "BRANCH?", fth_conditional_branch },
 	{ "BRANCH", fth_branch },
@@ -1483,7 +1490,7 @@ static const char *immediate_words[] =
 	"UNLOOP",
 	"EXIT",
 	"RECURSE",
-//	"POSTPONE",
+	//"POSTPONE",
 	NULL
 };
 
@@ -1514,7 +1521,7 @@ static const char *compile_only_words[] =
 	"UNLOOP",
 	"EXIT",
 	"RECURSE",
-//	"POSTPONE",
+	//"POSTPONE",
 	NULL
 };
 
@@ -1557,7 +1564,7 @@ FirthState *fth_create_state()
 	pFirth->head = NULL;							// dictionary is empty at this point
 	pFirth->firth_print = forth_default_output;		// setup default print routine
 	pFirth->halted = 0;
-	pFirth->IN = pFirth->TIB;						// TODO - not yet used
+	pFirth->INP = pFirth->TIB;						// TODO - not yet used
 	pFirth->compiling = false;						// start in interpreter mode
 
 	pFirth->hexmode = 0;
@@ -1592,7 +1599,7 @@ FirthState *fth_create_state()
 	fth_define_word_var(pFirth, "CP", (FirthNumber*)&pFirth->CP);
 	fth_define_word_var(pFirth, "RP", (FirthNumber*)&pFirth->RP);
 	fth_define_word_var(pFirth, "SP", (FirthNumber*)&pFirth->SP);
-	fth_define_word_var(pFirth, ">IN", (FirthNumber*)&pFirth->IN);
+	fth_define_word_var(pFirth, ">IN", (FirthNumber*)&pFirth->INP);
 	fth_define_word_var(pFirth, "TIB", (FirthNumber*)&pFirth->TIB);
 	fth_define_word_var(pFirth, "#TIB", (FirthNumber*)&pFirth->tib_len);
 

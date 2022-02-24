@@ -1,4 +1,4 @@
-\ Core.fth - core word library for CForth
+\ Core.fth - core word library for CFirth
 \ Copyright 2022 Mark Seminatore. All rights reserved.
 
 ( n1 n2 -- n2 )
@@ -9,11 +9,12 @@
 
 ( -- )
 : SPACE BL EMIT ;
-: CR 13 EMIT ;
 : LF 10 EMIT ;
+: CR 13 EMIT 10 EMIT ;
 : TAB 9 EMIT ;
 : BEL 7 EMIT ;
 : NEWLINE CR LF ;
+: ESC 27 EMIT ;
 
 \ toggles for hex/decimal output
 : HEX 1 ENV.HEX ! ;

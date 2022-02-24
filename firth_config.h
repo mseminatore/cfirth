@@ -28,7 +28,7 @@
 #endif
 
 // Adjust this to increase the max dictionary size
-#define FTH_ENV_SIZE 16 * 1024
+#define FTH_ENV_SIZE 32 * 1024
 
 // Adjust this to change the default stack size
 #define FTH_STACK_SIZE 512

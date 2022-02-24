@@ -82,7 +82,7 @@ struct FirthState
 #endif
 
 	char TIB[FTH_MAX_WORD_NAME];	// text input buffer
-	char *IN;				// input pointer
+	char *INP;				// input pointer
 	FirthNumber tib_len;	// length of input
 
 	FirthOutputFunc firth_print;
