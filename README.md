@@ -4,12 +4,34 @@
 **Firth** is an experimental programming language heavily inspired by Forth.
 Its goals are to be small, fast and efficient, portable and embeddable.
 
-Note that this is the C version of Firth. There is also an earlier C++ version
+## How small is Firth?
+
+The latest release build executable version of Firth is just **37 kilobytes**
+in size. The debug build is only 73 kilobytes. That is small for a compiler 
+and an interpreter with over 170 built-in library functions!
+
+## How efficient is Firth?
+
+There are **zero** memory allocations in Firth (compilation or execution)
+after initializeing the run-time. All memory, including the stacks, 
+dictionary, etc. is acquired through a single memory allocation once 
+at startup.
+
+## How embeddable is Firth?
+
+Embedding Firth is as easy as including just a few .C files and calling a few
+initialization functions. Firth can access native variables and call into 
+native C functions. The host app can read/write Firth constants and variables
+and execute code written in Firth.
+
+## Firth Overview
+
+This is the C version of Firth. There is also an earlier C++ version
 available [here](https://github.com/mseminatore/firth). The main differences
 between the two versions are:
 
-* This version is written in C
-* The C version uses a traditional linked list dictionary
+* This version is written in C to be more portable
+* The C version uses a traditional linked list dictionary implementation
 * The C version uses subroutine threading vs. bytecode interpreter
 
 > If you are new to Forth, you can learn a lot of the basics at 
