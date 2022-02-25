@@ -88,6 +88,10 @@
 -2147483646 CONSTANT MIN-INT
 2147483648 CONSTANT MSB
 
+: DICT.SIZE CP @ C0 @ - . ." bytes" ;
+
 \ : IF BZ [ HERE ] ;
 
 \ : THEN [ HERE SWAP ! ] ;
+
+include colors.fth

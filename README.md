@@ -267,148 +267,198 @@ displayed saying that *All tests passed!*
 
 ```Forth
 Firth> include test\core-tests.fth
-Test drop
-        1 √
-Test swap
-        2 √
-Test dup
-        3 √
-Test max
-        4 √
-        5 √
-        6 √
-Test min
-        7 √
-        8 √
-        9 √
-Test negate
-        10 √
-        11 √
-        12 √
-Test abs
-        13 √
-        14 √
-        15 √
-Test nip
-        16 √
-Test not
-        17 √
-        18 √
-Test or
-        19 √
-        20 √
-        21 √
-        22 √
-        23 √
-Test xor
-        24 √
-        25 √
-        26 √
-        27 √
-Test 2dup
-        28 √
-Test 2drop
-        29 √
-Test ?dup
-        30 √
-        31 √
+Test DROP
+        1  √
+Test SWAP
+        2  √
+Test DUP
+        3  √
+Test MAX
+        4  √
+        5  √
+        6  √
+Test MIN
+        7  √
+        8  √
+        9  √
+Test NEGATE
+        10  √
+        11  √
+        12  √
+Test ABS
+        13  √
+        14  √
+        15  √
+Test NIP
+        16  √
+Test NOT
+        17  √
+        18  √
+Test OR
+        19  √
+        20  √
+        21  √
+        22  √
+        23  √
+Test XOR
+        24  √
+        25  √
+        26  √
+        27  √
+Test 2DUP
+        28  √
+Test 2DROP
+        29  √
+Test ?DUP
+        30  √
+        31  √
 Test */
-        32 √
-        33 √
-        34 √
+        32  √
+        33  √
+        34  √
 Test <
-        35 √
-        36 √
-        37 √
+        35  √
+        36  √
+        37  √
 Test >
-        38 √
-        39 √
-        40 √
+        38  √
+        39  √
+        40  √
 Test =
-        41 √
-        42 √
+        41  √
+        42  √
 Test <>
-        43 √
-        44 √
+        43  √
+        44  √
 Test 0=
-        45 √
-        46 √
+        45  √
+        46  √
 Test 0<
-        47 √
-        48 √
-        49 √
+        47  √
+        48  √
+        49  √
 Test 0>
-        50 √
-        51 √
-        52 √
+        50  √
+        51  √
+        52  √
 Test 0<>
-        53 √
-        54 √
-Test and
-        55 √
-        56 √
-        57 √
-        58 √
-        59 √
-Test over
-        60 √
-Test pow
-        61 √
-        62 √
-Test rot
-        63 √
-Test tuck
-        64 √
+        53  √
+        54  √
+Test AND
+        55  √
+        56  √
+        57  √
+        58  √
+        59  √
+Test OVER
+        60  √
+Test POW
+        61  √
+        62  √
+Test ROT
+        63  √
+Test TUCK
+        64  √
 Test +
-        65 √
-        66 √
-        67 √
+        65  √
+        66  √
+        67  √
 Test -
-        68 √
-        69 √
-        70 √
+        68  √
+        69  √
+        70  √
 Test *
-        71 √
-        72 √
-        73 √
+        71  √
+        72  √
+        73  √
 Test /
-        74 √
-        75 √
-        76 √
-Test mod
-        77 √
-        78 √
-        79 √
-Test /mod
-        80 √
-        81 √
-        82 √
-Test sqr
-        83 √
-        84 √
-        85 √
-        86 √
+        74  √
+        75  √
+        76  √
+Test MOD
+        77  √
+        78  √
+        79  √
+Test /MOD
+        80  √
+        81  √
+        82  √
+Test SQR
+        83  √
+        84  √
+        85  √
+        86  √
 Test 1+
-        87 √
-        88 √
-        89 √
+        87  √
+        88  √
+        89  √
 Test 1-
-        90 √
-        91 √
-        92 √
+        90  √
+        91  √
+        92  √
+Test LSHIFT
+        93  √
+        94  √
+        95  √
+Test RSHIFT
+        96  √
+        97  √
+        98  √
+        99  √
 Test DO LOOP
-        93 √
-Test depth
-        94 √
-        95 √
-        96 √
+        100  √
+        101  √
+Test FOR LOOP
+        102  √
+Test FOR +LOOP
+        103  √
+Test DEPTH
+        104  √
+        105  √
+        106  √
 Test IF ELSE THEN
-        97 √
-        98 √
-        99 √
-        100 √
-        101 √
-        102 √
+        107  √
+        108  √
+        109  √
+        110  √
+        111  √
+        112  √
+Test IF ELSE ENDIF
+        113  √
+        114  √
+        115  √
+        116  √
+        117  √
+        118  √
+Test >R R>
+        119  √
+        120  √
+Test 2>R 2R>
+        121  √
+        122  √
+Test CHARS
+        123  √
+        124  √
+Test CELLS
+        125  √
+        126  √
+Test RECURSE
+        127  √
+        128  √
+Test UNLOOP and EXIT
+        129  √
+Test BEGIN and UNTIL
+        130  √
+        131  √
+        132  √
+Test WHILE and REPEAT
+        133  √
+        134  √
+        135  √
+        136  √
+Test AGAIN
+        137  √
+        138  √
 All tests passed!
 ```
 

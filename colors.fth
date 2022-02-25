@@ -2,7 +2,7 @@
 \ Copyright 2022 Mark Seminatore. All rights reserved.
 
 \ screen control
-: TERM.CLEAR ESC ." [2J" ;
+: TERM.CLEAR ESC ." [2J" ESC ." [H" ;
 
 \ text colors
 : TERM.RESET ESC ." [0m" ;

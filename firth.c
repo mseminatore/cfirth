@@ -704,6 +704,10 @@ static int fth_compile(FirthState *pFirth)
 			// if it is an immediate word execute it, otherwise thread it
 			if (pDict->flags.immediate)
 			{
+				// immediate words sometimes need their xt on the stack
+				if (pDict->flags.colon_word || pDict->flags.xt_on_stack)
+					fth_push(pFirth, (FirthNumber)pDict);
+
 				FirthFunc f = (FirthFunc)pDict->code_pointer;
 				f(pFirth);
 			}
