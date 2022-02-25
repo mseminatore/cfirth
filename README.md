@@ -20,9 +20,10 @@ at startup.
 ## How embeddable is Firth?
 
 Embedding Firth is as easy as including just a few .C files and calling a few
-initialization functions. Firth can access native variables and call into 
-native C functions. The host app can read/write Firth constants and variables
-and execute code written in Firth.
+initialization functions. You can see some examples [here](#embedding-firth). 
+Firth can access native variables and call into native C functions. The host 
+app can read/write Firth constants and variables and execute code written 
+in Firth.
 
 ## Firth Overview
 
