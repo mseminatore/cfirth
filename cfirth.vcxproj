@@ -22,7 +22,7 @@
     <ProjectGuid>{438B671F-477F-4372-B672-19B456C306AC}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>cforth</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
     <ProjectName>cfirth</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
