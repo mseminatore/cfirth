@@ -27,7 +27,7 @@ FirthNumber fth_pushf(FirthState *pFirth, FirthFloat val)
 
 	*pFirth->FP++ = val;
 
-	FirthNumber depth = pFirth->FP - pFirth->float_stack;
+	FirthNumber depth = (FirthNumber)(pFirth->FP - pFirth->float_stack);
 	if (depth > pFirth->maxf)
 		pFirth->maxf = depth;
 

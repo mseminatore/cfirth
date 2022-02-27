@@ -12,7 +12,7 @@
 #endif
 
 #ifndef FTH_DIR_SEPARATOR
-	#ifdef WIN32
+	#if defined(_WIN32)
 	#	define FTH_DIR_SEPARATOR '\\'
 	#else
 	#	define FTH_DIR_SEPARATOR '/'
@@ -51,7 +51,7 @@
 #define FTH_MAX_PRINTF_SIZE 512
 
 // Defines the underlying type for a Number
-#if defined(_WIN32)
+#if defined(_M_IX86)
 	typedef int FirthNumber;
 #else
 	typedef long long FirthNumber;
@@ -59,7 +59,12 @@
 
 // Defines the underlying type for a float Number
 #if FTH_INCLUDE_FLOAT == 1
-	typedef float FirthFloat;
+
+	#if defined(_WIN64)
+		typedef double FirthFloat;
+	#else
+		typedef float FirthFloat;
+	#endif
 
 	// Defines epsilon for floating point precision
 #	define FTH_EPSILON 1e-5f

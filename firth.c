@@ -281,7 +281,7 @@ static FirthNumber fth_word(FirthState *pFirth)
 
 	LOG("WORD");
 
-	int delim = fth_pop(pFirth);
+	FirthNumber delim = fth_pop(pFirth);
 
 	// skip any leading delimiter chars
 	while ((c = *pFirth->INP) == delim)
