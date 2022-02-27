@@ -16,7 +16,7 @@ FirthFloat fth_popf(FirthState *pFirth)
 }
 
 //
-int fth_pushf(FirthState *pFirth, FirthFloat val)
+FirthNumber fth_pushf(FirthState *pFirth, FirthFloat val)
 {
 	// check for stack overflow
 	if ((pFirth->FP - pFirth->float_stack) + 1 > FTH_STACK_SIZE)
@@ -41,7 +41,7 @@ FirthFloat fth_peekf(FirthState *pFirth)
 }
 
 //
-static int fadd(FirthState *pFirth)
+static FirthNumber fadd(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	FirthFloat b = fth_popf(pFirth);
@@ -50,7 +50,7 @@ static int fadd(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fsub(FirthState *pFirth)
+static FirthNumber fsub(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	FirthFloat b = fth_popf(pFirth);
@@ -60,7 +60,7 @@ static int fsub(FirthState *pFirth)
 }
 
 //
-static int fmul(FirthState *pFirth)
+static FirthNumber fmul(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	FirthFloat b = fth_popf(pFirth);
@@ -69,7 +69,7 @@ static int fmul(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fdiv(FirthState *pFirth)
+static FirthNumber fdiv(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	FirthFloat b = fth_popf(pFirth);
@@ -78,7 +78,7 @@ static int fdiv(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fprint(FirthState *pFirth)
+static FirthNumber fprint(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	firth_printf(pFirth, "%f", a);
@@ -86,7 +86,7 @@ static int fprint(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fsin(FirthState *pFirth)
+static FirthNumber fsin(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	fth_pushf(pFirth, (FirthFloat)sin(a));
@@ -94,7 +94,7 @@ static int fsin(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fcos(FirthState *pFirth)
+static FirthNumber fcos(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	fth_pushf(pFirth, (FirthFloat)cos(a));
@@ -102,7 +102,7 @@ static int fcos(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int ftan(FirthState *pFirth)
+static FirthNumber ftan(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	fth_pushf(pFirth, (FirthFloat)tan(a));
@@ -110,7 +110,7 @@ static int ftan(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fln(FirthState *pFirth)
+static FirthNumber fln(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	fth_pushf(pFirth, (FirthFloat)log(a));
@@ -118,7 +118,7 @@ static int fln(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fexp(FirthState *pFirth)
+static FirthNumber fexp(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	fth_pushf(pFirth, (FirthFloat)exp(a));
@@ -126,7 +126,7 @@ static int fexp(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fabsolute(FirthState *pFirth)
+static FirthNumber fabsolute(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	fth_pushf(pFirth, (FirthFloat)fabs(a));
@@ -134,7 +134,7 @@ static int fabsolute(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fsqrt(FirthState *pFirth)
+static FirthNumber fsqrt(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	fth_pushf(pFirth, (FirthFloat)sqrt(a));
@@ -142,7 +142,7 @@ static int fsqrt(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int ffetch(FirthState *pFirth)
+static FirthNumber ffetch(FirthState *pFirth)
 {
 	FirthFloat *pNum = (FirthFloat*)fth_pop(pFirth);
 	FirthFloat val = *pNum;
@@ -151,7 +151,7 @@ static int ffetch(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fstore(FirthState *pFirth)
+static FirthNumber fstore(FirthState *pFirth)
 {
 	FirthFloat *pNum = (FirthFloat*)fth_pop(pFirth);
 	FirthFloat val = fth_popf(pFirth);
@@ -160,14 +160,14 @@ static int fstore(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fdepth(FirthState *pFirth)
+static FirthNumber fdepth(FirthState *pFirth)
 {
 	fth_push(pFirth, (pFirth->FP - pFirth->float_stack));
 
 	return FTH_TRUE;
 }
 
-static int fdup(FirthState *pFirth)
+static FirthNumber fdup(FirthState *pFirth)
 {
 	FirthFloat a = fth_peekf(pFirth);
 	fth_pushf(pFirth, a);
@@ -175,14 +175,14 @@ static int fdup(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fdrop(FirthState *pFirth)
+static FirthNumber fdrop(FirthState *pFirth)
 {
 	fth_popf(pFirth);
 
 	return FTH_TRUE;
 }
 
-static int fswap(FirthState *pFirth)
+static FirthNumber fswap(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	FirthFloat b = fth_popf(pFirth);
@@ -194,7 +194,7 @@ static int fswap(FirthState *pFirth)
 }
 
 //
-static int dotf(FirthState *pFirth)
+static FirthNumber dotf(FirthState *pFirth)
 {
 	// make a copy of the stack
 	FirthFloat *fs = pFirth->FP;
@@ -210,7 +210,7 @@ static int dotf(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int frot(FirthState *pFirth)
+static FirthNumber frot(FirthState *pFirth)
 {
 	FirthFloat n3 = fth_popf(pFirth);
 	FirthFloat n2 = fth_popf(pFirth);
@@ -222,7 +222,7 @@ static int frot(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fover(FirthState *pFirth)
+static FirthNumber fover(FirthState *pFirth)
 {
 	FirthFloat n2 = fth_popf(pFirth);
 	FirthFloat n1 = fth_popf(pFirth);
@@ -233,7 +233,7 @@ static int fover(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fnip(FirthState *pFirth)
+static FirthNumber fnip(FirthState *pFirth)
 {
 	FirthFloat n2 = fth_popf(pFirth);
 	FirthFloat n1 = fth_popf(pFirth);
@@ -242,7 +242,7 @@ static int fnip(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int ftuck(FirthState *pFirth)
+static FirthNumber ftuck(FirthState *pFirth)
 {
 	FirthFloat n2 = fth_popf(pFirth);
 	FirthFloat n1 = fth_popf(pFirth);
@@ -253,7 +253,7 @@ static int ftuck(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-int feq(FirthState *pFirth)
+static FirthNumber feq(FirthState *pFirth)
 {
 	FirthFloat n2 = fth_popf(pFirth);
 	FirthFloat n1 = fth_popf(pFirth);
@@ -262,7 +262,7 @@ int feq(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fless(FirthState *pFirth)
+static FirthNumber fless(FirthState *pFirth)
 {
 	FirthFloat n2 = fth_popf(pFirth);
 	FirthFloat n1 = fth_popf(pFirth);
@@ -271,7 +271,7 @@ static int fless(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fgreater(FirthState *pFirth)
+static FirthNumber fgreater(FirthState *pFirth)
 {
 	FirthFloat n2 = fth_popf(pFirth);
 	FirthFloat n1 = fth_popf(pFirth);
@@ -280,7 +280,7 @@ static int fgreater(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
-static int fne(FirthState *pFirth)
+static FirthNumber fne(FirthState *pFirth)
 {
 	FirthFloat n2 = fth_popf(pFirth);
 	FirthFloat n1 = fth_popf(pFirth);
@@ -325,7 +325,7 @@ static const FirthWordSet float_lib[] =
 };
 
 //
-int firth_register_float(FirthState *pFirth)
+FirthNumber firth_register_float(FirthState *pFirth)
 {
 	// common constants
 	fth_define_word_fconst(pFirth, "PI",	3.1415926f);

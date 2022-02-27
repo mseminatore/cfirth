@@ -1,5 +1,8 @@
 #include <stdio.h>
-#include <Windows.h>
+
+#if defined(_WIN32) | defined(_WIN64)
+#	include <Windows.h>
+#endif
 
 #include "firth.h"
 #include "firth_float.h"
@@ -8,7 +11,7 @@
 static struct FirthState *pFirth = NULL;
 
 //
-static myPrint(char *s)
+static void myPrint(char *s)
 {
 	fputs(s, stdout);
 }
@@ -37,6 +40,7 @@ void banner(FirthState *pFirth)
 //
 int setupConsole()
 {
+#if defined(_WIN32) | defined(_WIN64)
 	// Set output mode to handle virtual terminal sequences
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (hOut == INVALID_HANDLE_VALUE)
@@ -55,6 +59,7 @@ int setupConsole()
 	{
 		return GetLastError();
 	}
+#endif
 
 	return 0;
 }

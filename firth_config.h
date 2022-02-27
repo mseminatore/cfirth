@@ -51,7 +51,11 @@
 #define FTH_MAX_PRINTF_SIZE 512
 
 // Defines the underlying type for a Number
-typedef int FirthNumber;
+#if defined(_WIN32)
+	typedef int FirthNumber;
+#else
+	typedef long long FirthNumber;
+#endif
 
 // Defines the underlying type for a float Number
 #if FTH_INCLUDE_FLOAT == 1
