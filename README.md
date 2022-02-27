@@ -10,12 +10,18 @@ The latest release build executable version of Firth is just **37 kilobytes**
 in size. The debug build is only 73 kilobytes. That is small for a compiler 
 and an interpreter with over 170 built-in library functions!
 
-## How efficient is Firth?
+## How fast and efficient is Firth?
 
 There are **zero** memory allocations in Firth (compilation or execution)
 after initializeing the run-time. All memory, including the stacks, 
 dictionary, etc. is acquired through a single memory allocation once 
 at startup.
+
+## How portable is Firth?
+
+The Firth codebase builds and runs in both 32-bit and 64-bit environments. It
+is tested regularly on Windows and Mac OSX using clang and so should run on
+Linux as well.
 
 ## How embeddable is Firth?
 
