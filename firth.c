@@ -864,7 +864,7 @@ static FirthNumber fth_quit(FirthState *pFirth)
 	LOG("QUIT");
 
 	// show user prompt
-	if (pFirth->BLK == stdin)
+	if (pFirth->BLK == stdin && pFirth->show_prompts)
 		pFirth->firth_print("firth>");
 
 	// TODO - reset return stacks?
@@ -875,7 +875,7 @@ static FirthNumber fth_quit(FirthState *pFirth)
 
 	fth_interpret(pFirth);
 
-	if (pFirth->BLK == stdin)
+	if (pFirth->BLK == stdin && pFirth->show_prompts)
 		pFirth->firth_print(" ok\n");
 
 	return FTH_TRUE;
@@ -1048,12 +1048,27 @@ static FirthNumber fth_backslash(FirthState *pFirth)
 
 // helper for LOAD
 // ( -- )
-static FirthNumber load_helper(FirthState *pFirth, char *filename)
+static FirthNumber load_helper(FirthState *pFirth, const char *filename)
+{
+	FILE *f = fopen(filename, "rt");
+	if (!f)
+	{
+		firth_printf(pFirth, "File (%s) not found.\n", filename);
+		return FTH_FALSE;
+	}
+
+	fth_push_file(pFirth, f, filename);
+
+	return FTH_TRUE;
+}
+
+//
+static FirthNumber load_file(FirthState *pFirth, const char *filename)
 {
 	char include_file[FTH_MAX_PATH];
 
 	// see if filename was already loaded
-	sprintf(include_file, "%s-included", filename);
+	sprintf(include_file, "include-%s", filename);
 	DictionaryEntry *pEntry = fth_tick_internal(pFirth, include_file);
 
 	if (pEntry)
@@ -1067,16 +1082,7 @@ static FirthNumber load_helper(FirthState *pFirth, char *filename)
 	pFirth->head->code_pointer = fth_marker_imp;
 	pFirth->head->flags.xt_on_stack = 1;
 
-	FILE *f = fopen(filename, "rt");
-	if (!f)
-	{
-		firth_printf(pFirth, "File (%s) not found.\n", filename);
-		return FTH_FALSE;
-	}
-
-	fth_push_file(pFirth, f, filename);
-	
-	return FTH_TRUE;
+	return load_helper(pFirth, filename);
 }
 
 // implements INCLUDE
@@ -1089,7 +1095,7 @@ static FirthNumber fth_load(FirthState *pFirth)
 
 	char *filename = (char*)fth_pop(pFirth);
 
-	return load_helper(pFirth, filename);
+	return load_file(pFirth, filename);
 }
 
 // implements R>
@@ -1567,6 +1573,8 @@ FirthState *fth_create_state()
 		return NULL;
 	}
 
+	pFirth->show_prompts = false;
+
 	// setup stacks
 	pFirth->SP = pFirth->stack;
 	pFirth->RP = pFirth->return_stack;
@@ -1629,10 +1637,17 @@ FirthState *fth_create_state()
 	// load the core library
 	load_helper(pFirth, "core.fth");
 
+
 #if FTH_INCLUDE_FLOAT == 1
 	// load (optional) floating point libraries
 	firth_register_float(pFirth);
 #endif
+
+	// process the file
+	while (pFirth->BLK != stdin)
+		fth_quit(pFirth);
+
+	pFirth->show_prompts = true;
 
 	return pFirth;
 }
@@ -1887,4 +1902,15 @@ FirthNumber *fth_get_var(FirthState *pFirth, const char *word)
 		return NULL;
 
 	return fth_body_internal(pEntry);
+}
+
+// C API to load a Forth file
+FirthNumber fth_load_file(FirthState *pFirth, const char *filename)
+{
+	FirthNumber result = load_file(pFirth, filename);
+
+	if (result != FTH_TRUE)
+		return FTH_FALSE;
+
+	return FTH_TRUE;
 }

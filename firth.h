@@ -88,6 +88,7 @@ struct FirthState
 	FirthOutputFunc firth_print;
 	BYTE halted;
 	bool compiling;
+	bool show_prompts;
 };
 
 // custom function registration struct
@@ -121,9 +122,12 @@ FirthNumber fth_define_word_var(FirthState*, const char *name, FirthNumber *pVar
 
 FirthNumber fth_update(FirthState *pFirth);
 
+FirthNumber fth_load_file(FirthState *pFirth, const char *filename);
 FirthNumber fth_parse_string(FirthState *pFirth, const char *str);
 FirthNumber fth_exec_word(FirthState *pFirth, const char *str);
 FirthNumber fth_exec_word1(FirthState *pFirth, const char *word, FirthNumber n);
 FirthNumber fth_exec_word2(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2);
 FirthNumber fth_exec_word3(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2, FirthNumber n3);
+
 FirthNumber *fth_get_var(FirthState *pFirth, const char *word);
+
