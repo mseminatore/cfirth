@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdio.h>
 
 #if defined(_WIN32) | defined(_WIN64)
@@ -83,6 +85,7 @@ int main(int argc, char *argv[])
 		char buf[FTH_MAX_PATH];
 		sprintf(buf, "include %s", argv[1]);
 		fth_parse_string(pFirth, buf);
+		fth_update(pFirth);
 	}
 
 	// REPL loop

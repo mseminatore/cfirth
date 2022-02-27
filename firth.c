@@ -1050,6 +1050,23 @@ static FirthNumber fth_backslash(FirthState *pFirth)
 // ( -- )
 static FirthNumber load_helper(FirthState *pFirth, char *filename)
 {
+	char include_file[FTH_MAX_PATH];
+
+	// see if filename was already loaded
+	sprintf(include_file, "%s-included", filename);
+	DictionaryEntry *pEntry = fth_tick_internal(pFirth, include_file);
+
+	if (pEntry)
+	{
+		firth_printf(pFirth, "File (%s) already loaded.\n", filename);
+		return FTH_TRUE;
+	}
+
+	fth_make_dict_entry(pFirth, include_file);
+
+	pFirth->head->code_pointer = fth_marker_imp;
+	pFirth->head->flags.xt_on_stack = 1;
+
 	FILE *f = fopen(filename, "rt");
 	if (!f)
 	{
@@ -1066,28 +1083,11 @@ static FirthNumber load_helper(FirthState *pFirth, char *filename)
 // ( -- )
 static FirthNumber fth_load(FirthState *pFirth)
 {
-	char include_file[FTH_MAX_PATH];
-	
 	// get the filename
 	fth_push(pFirth, ' ');
 	fth_word(pFirth);
 
 	char *filename = (char*)fth_pop(pFirth);
-
-	// see if filename was already loaded
-	sprintf(include_file, "%s-included", filename);
-	DictionaryEntry *pEntry = fth_tick_internal(pFirth, include_file);
-
-	if (pEntry)
-	{
-		firth_printf(pFirth, "File (%s) already loaded.\n", filename);
-		return FTH_TRUE;
-	}
-
-	fth_make_dict_entry(pFirth, include_file);
-
-	pFirth->head->code_pointer = fth_marker_imp;
-	pFirth->head->flags.xt_on_stack = 1;
 
 	return load_helper(pFirth, filename);
 }
