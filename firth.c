@@ -1611,7 +1611,7 @@ FirthState *fth_create_state()
 	// setup hidden words
 	fth_make_hidden(pFirth, "(.\")");
 
-	// setup variables
+	// setup variables and constants
 	fth_define_word_var(pFirth, "C0", (FirthNumber*)&pFirth->dictionary_base);
 	fth_define_word_var(pFirth, "CP", (FirthNumber*)&pFirth->CP);
 	fth_define_word_var(pFirth, "RP", (FirthNumber*)&pFirth->RP);
@@ -1623,6 +1623,8 @@ FirthState *fth_create_state()
 	fth_define_word_var(pFirth, "ENV.MAXS", (FirthNumber*)&pFirth->maxs);
 	fth_define_word_var(pFirth, "ENV.MAXR", (FirthNumber*)&pFirth->maxr);
 	fth_define_word_var(pFirth, "ENV.HEX", (FirthNumber*)&pFirth->hexmode);
+	
+	fth_define_word_const(pFirth, "ENV.CELL.SIZE", sizeof(FirthNumber));
 
 	// load the core library
 	load_helper(pFirth, "core.fth");

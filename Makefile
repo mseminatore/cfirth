@@ -10,4 +10,4 @@ firth: $(OBJS)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 clean:
-	rm -f *.o *~ cfirth
+	rm -f *.o *~ firth

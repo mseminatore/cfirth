@@ -77,6 +77,14 @@ int main(int argc, char *argv[])
 
 	banner(pFirth);
 
+	// if a file is given load it
+	if (argc > 1)
+	{
+		char buf[FTH_MAX_PATH];
+		sprintf(buf, "include %s", argv[1]);
+		fth_parse_string(pFirth, buf);
+	}
+
 	// REPL loop
 	while (!pFirth->halted)
 	{

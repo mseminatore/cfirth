@@ -234,8 +234,8 @@ Test-group
     T{ 1 CHARS }T 1 ==
 
     ." Test CELLS " CR
-    T{ 4 CELLS }T 16 ==
-    T{ 1 CELLS }T 4 ==
+    T{ 4 CELLS }T ENV.CELL.SIZE 4 * ==
+    T{ 1 CELLS }T ENV.CELL.SIZE ==
 
     ." Test RECURSE " CR
     func GI5 ( +n1 -- +n2) DUP 2 < IF DROP 1 EXIT THEN DUP 1- RECURSE * ;
