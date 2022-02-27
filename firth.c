@@ -6,7 +6,16 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <assert.h>
-#include <direct.h>
+
+#if defined(_WIN32) | defined(_WIN64)
+#	include <direct.h>
+#	define CHDIR _chdir
+#	define GETCWD _getcwd
+#else
+#	include <unistd.h>
+#	define CHDIR chdir
+#	define GETCWD getcwd
+#endif
 
 #include "firth.h"
 
@@ -17,7 +26,11 @@
 #if FTH_CASE_SENSITIVE == 1
 #	define STRING_COMPARE strcmp
 #else
-#	define STRING_COMPARE _stricmp
+	#if defined(_WIN32) | defined(_WIN64)
+	#	define STRING_COMPARE _stricmp
+	#else
+	#	define STRING_COMPARE strcasecmp
+	#endif
 #endif
 
 //
@@ -52,7 +65,7 @@ void firth_printf(FirthState *pFirth, char *format, ...)
 }
 
 //
-static int isInteger(const char *s)
+static FirthNumber isInteger(const char *s)
 {
 	if (*s != '-' && *s != '+' && !isdigit(*s))
 		return FTH_FALSE;
@@ -69,20 +82,20 @@ static int isInteger(const char *s)
 }
 
 // given an xt get the data pointer
-static int* fth_body_internal(DictionaryEntry *xt)
+static FirthNumber* fth_body_internal(DictionaryEntry *xt)
 {
-	return (int*)(xt->name + xt->name_len + 1);
+	return (FirthNumber*)(xt->name + xt->name_len + 1);
 }
 
 // implements >BODY ( addr -- d )
-static int fth_body(FirthState *pFirth)
+static FirthNumber fth_body(FirthState *pFirth)
 {
 	DictionaryEntry *xt = (DictionaryEntry *)fth_pop(pFirth);
-	return fth_push(pFirth, (FirthNumber)(int*)(xt->name + xt->name_len + 1));
+	return fth_push(pFirth, (FirthNumber)(FirthNumber*)(xt->name + xt->name_len + 1));
 }
 
 // push a value onto the return stack
-static int fth_r_push(FirthState *pFirth, FirthNumber val)
+static FirthNumber fth_r_push(FirthState *pFirth, FirthNumber val)
 {
 	// check for return stack overflow
 	if ((pFirth->RP - pFirth->return_stack) + 1 > FTH_RETURN_STACK_SIZE)
@@ -174,14 +187,14 @@ static FILE *fth_pop_file(FirthState *pFirth)
 	fclose(pFirth->input_stack[pFirth->ISP].fd);
 	pFirth->input_stack[pFirth->ISP].fd = NULL;	// zero out the closed file ptr
 
-	_chdir(pFirth->input_stack[pFirth->ISP].dirname);
+	CHDIR(pFirth->input_stack[pFirth->ISP].dirname);
 	pFirth->input_stack[pFirth->ISP].dirname[0] = '\0';
 
 	return pFirth->input_stack[pFirth->ISP - 1].fd;
 }
 
 //
-static int fth_push_file(FirthState *pFirth, FILE *f, const char *filename)
+static FirthNumber fth_push_file(FirthState *pFirth, FILE *f, const char *filename)
 {
 	char path[FTH_MAX_PATH];
 	char oldWorkingDir[FTH_MAX_PATH];
@@ -193,7 +206,7 @@ static int fth_push_file(FirthState *pFirth, FILE *f, const char *filename)
 	}
 
 	// save current working dir
-	_getcwd(oldWorkingDir, sizeof(oldWorkingDir));
+	GETCWD(oldWorkingDir, sizeof(oldWorkingDir));
 
 	strcpy(path, filename);
 
@@ -202,7 +215,7 @@ static int fth_push_file(FirthState *pFirth, FILE *f, const char *filename)
 
 	// set new working dir
 	if (STRING_COMPARE(dir, oldWorkingDir))
-		_chdir(dir);
+		CHDIR(dir);
 
 	pFirth->input_stack[pFirth->ISP].fd = f;
 	strcpy(pFirth->input_stack[pFirth->ISP++].dirname, oldWorkingDir);
@@ -212,14 +225,14 @@ static int fth_push_file(FirthState *pFirth, FILE *f, const char *filename)
 }
 
 // implements KEY - get a new key from the terminal
-static int fth_key(FirthState *pFirth)
+static FirthNumber fth_key(FirthState *pFirth)
 {
 	return fth_push(pFirth, getc(stdin));
 }
 
 // implements ACCEPT - read in a line of text
 // ( addr limit -- size )
-static int fth_accept(FirthState *pFirth)
+static FirthNumber fth_accept(FirthState *pFirth)
 {
 	int c;
 	FirthNumber count = 0;
@@ -249,7 +262,7 @@ static int fth_accept(FirthState *pFirth)
 }
 
 //
-static int fth_fill_tib(FirthState *pFirth)
+static FirthNumber fth_fill_tib(FirthState *pFirth)
 {
 	// fill input bufer
 	fth_push(pFirth, (FirthNumber)pFirth->TIB);
@@ -262,7 +275,7 @@ static int fth_fill_tib(FirthState *pFirth)
 
 // implements WORD - read in a new word with the given delimiter
 // ( delim -- addr )
-static int fth_word(FirthState *pFirth)
+static FirthNumber fth_word(FirthState *pFirth)
 {
 	int c;
 
@@ -305,7 +318,7 @@ static int fth_word(FirthState *pFirth)
 }
 
 // create a new empty dictionary entry withe name given by word
-static int fth_make_dict_entry(FirthState *pFirth, const char *word)
+static FirthNumber fth_make_dict_entry(FirthState *pFirth, const char *word)
 {
 	// see if the word already exists and if so warn about it
 	DictionaryEntry *pEntry = (DictionaryEntry*)fth_tick_internal(pFirth, word);
@@ -343,8 +356,21 @@ static int fth_make_dict_entry(FirthState *pFirth, const char *word)
 	return FTH_TRUE;
 }
 
+// implements CREATE
+// create a new empty dictionary entry
+static FirthNumber fth_create(FirthState *pFirth)
+{
+	// get the next word in input stream
+	fth_push(pFirth, ' ');
+	fth_word(pFirth);
+
+	char *newWord = (char*)fth_pop(pFirth);
+
+	return fth_make_dict_entry(pFirth, newWord);
+}
+
 //
-static int fth_write_to_cp(FirthState *pFirth, FirthNumber val)
+static FirthNumber fth_write_to_cp(FirthState *pFirth, FirthNumber val)
 {
 	*((FirthNumber*)pFirth->CP) = val;
 	pFirth->CP += sizeof(FirthNumber);		// advance dictionary pointer
@@ -354,7 +380,7 @@ static int fth_write_to_cp(FirthState *pFirth, FirthNumber val)
 
 #if FTH_INCLUDE_FLOAT == 1
 // run-time implementation of FCONSTANT
-static int fth_fconst_imp(FirthState *pFirth)
+static FirthNumber fth_fconst_imp(FirthState *pFirth)
 {
 	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
 
@@ -365,18 +391,18 @@ static int fth_fconst_imp(FirthState *pFirth)
 }
 
 // run-time implementation of FVARIABLE
-static int fth_fvar_imp(FirthState *pFirth)
+static FirthNumber fth_fvar_imp(FirthState *pFirth)
 {
 	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
 
-	int addr = (int)fth_body_internal(pDict);
+	FirthNumber addr = (FirthNumber)fth_body_internal(pDict);
 	fth_push(pFirth, addr);
 
 	return FTH_TRUE;
 }
 
 // run-time implementation of user FVARIABLE
-static int fth_user_fvar_imp(FirthState *pFirth)
+static FirthNumber fth_user_fvar_imp(FirthState *pFirth)
 {
 	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
 
@@ -387,7 +413,7 @@ static int fth_user_fvar_imp(FirthState *pFirth)
 }
 
 // create a FCONSTANT word
-static int fth_fconst(FirthState *pFirth)
+static FirthNumber fth_fconst(FirthState *pFirth)
 {
 	// create a new dictionary entry for this constant
 	fth_create(pFirth);
@@ -400,13 +426,13 @@ static int fth_fconst(FirthState *pFirth)
 	pFirth->head->flags.constant = 1;
 
 	// store constant value in dictionary
-	fth_write_to_cp(pFirth, *(int*)&n);
+	fth_write_to_cp(pFirth, *(FirthNumber*)&n);
 
 	return FTH_TRUE;
 }
 
 // create a FVARIABLE word
-static int fth_fvar(FirthState *pFirth)
+static FirthNumber fth_fvar(FirthState *pFirth)
 {
 	// create a new dictionary entry for this variable
 	fth_create(pFirth);
@@ -422,7 +448,7 @@ static int fth_fvar(FirthState *pFirth)
 }
 
 // push a float literal value onto the stack
-static int fth_fliteral(FirthState *pFirth)
+static FirthNumber fth_fliteral(FirthState *pFirth)
 {
 	// fetch the next address and use it to get the literal value
 	FirthFloat val = *(FirthFloat*)pFirth->IP++;
@@ -435,29 +461,29 @@ static int fth_fliteral(FirthState *pFirth)
 #endif
 
 // run-time implementation of CONSTANT
-static int fth_const_imp(FirthState *pFirth)
+static FirthNumber fth_const_imp(FirthState *pFirth)
 {
 	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
 
-	int val = *fth_body_internal(pDict);
+	FirthNumber val = *fth_body_internal(pDict);
 	fth_push(pFirth, val);
 
 	return FTH_TRUE;
 }
 
 // run-time implementation of VARIABLE
-static int fth_var_imp(FirthState *pFirth)
+static FirthNumber fth_var_imp(FirthState *pFirth)
 {
 	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
 
-	FirthNumber addr = (int)fth_body_internal(pDict);
+	FirthNumber addr = (FirthNumber)fth_body_internal(pDict);
 	fth_push(pFirth, addr);
 
 	return FTH_TRUE;
 }
 
 //
-static int fth_user_var_imp(FirthState *pFirth)
+static FirthNumber fth_user_var_imp(FirthState *pFirth)
 {
 	DictionaryEntry *pDict = (DictionaryEntry*)fth_pop(pFirth);
 
@@ -468,7 +494,7 @@ static int fth_user_var_imp(FirthState *pFirth)
 }
 
 // create a CONSTANT word
-static int fth_const(FirthState *pFirth)
+static FirthNumber fth_const(FirthState *pFirth)
 {
 	// create a new dictionary entry for this constant
 	fth_create(pFirth);
@@ -487,7 +513,7 @@ static int fth_const(FirthState *pFirth)
 }
 
 // create a VARIABLE word
-static int fth_var(FirthState *pFirth)
+static FirthNumber fth_var(FirthState *pFirth)
 {
 	// create a new dictionary entry for this variable
 	fth_create(pFirth);
@@ -504,7 +530,7 @@ static int fth_var(FirthState *pFirth)
 
 // implements NUMBER - look at input and if a number push it onto the stack
 // Note: if not a number leaves input addr on stack
-static int fth_number(FirthState *pFirth)
+static FirthNumber fth_number(FirthState *pFirth)
 {
 	char *input = (char*)fth_peek(pFirth);
 	if (isInteger(input))
@@ -529,10 +555,10 @@ static int fth_number(FirthState *pFirth)
 }
 
 // push a literal value onto the stack
-static int fth_literal(FirthState *pFirth)
+static FirthNumber fth_literal(FirthState *pFirth)
 {
 	// fetch the next address and use it to get the literal value
-	int val = *pFirth->IP++;
+	FirthNumber val = *pFirth->IP++;
 	
 	// push literal value onto the stack
 	fth_push(pFirth, val);
@@ -557,7 +583,7 @@ static DictionaryEntry *fth_tick_internal(FirthState *pFirth, const char *word)
 }
 
 //
-static int fth_interpreter_tick(FirthState *pFirth)
+static FirthNumber fth_interpreter_tick(FirthState *pFirth)
 {
 	// get a WORD from input
 	fth_push(pFirth, ' ');
@@ -592,7 +618,7 @@ static int fth_interpreter_tick(FirthState *pFirth)
 
 // implements TICK word
 // Note: if word not found in dictionary, leaves the input addr on the stack
-static int fth_tick(FirthState *pFirth)
+static FirthNumber fth_tick(FirthState *pFirth)
 {
 	// get a WORD from input
 	fth_push(pFirth, ' ');
@@ -621,10 +647,10 @@ static int fth_tick(FirthState *pFirth)
 }
 
 // execute a colon word
-static int fth_address_interpreter(FirthState *pFirth)
+static FirthNumber fth_address_interpreter(FirthState *pFirth)
 {
 	// push IP on return stack
-	fth_r_push(pFirth, (int)pFirth->IP);
+	fth_r_push(pFirth, (FirthNumber)pFirth->IP);
 
 	// get the xt from the stack
 	DictionaryEntry *pThisWord = (DictionaryEntry*)fth_pop(pFirth);
@@ -645,13 +671,13 @@ static int fth_address_interpreter(FirthState *pFirth)
 	}
 
 	// pop IP off return stack
-	pFirth->IP = (int*)fth_r_pop(pFirth);
+	pFirth->IP = (FirthNumber*)fth_r_pop(pFirth);
 
 	return FTH_TRUE;
 }
 
 // implements ':' - begin compiling a new word
-static int fth_colon(FirthState *pFirth)
+static FirthNumber fth_colon(FirthState *pFirth)
 {
 	// create a new dictionary entry
 	fth_create(pFirth);
@@ -665,7 +691,7 @@ static int fth_colon(FirthState *pFirth)
 }
 
 // implements ';' - end definition of a new WORD
-static int fth_semicolon(FirthState *pFirth)
+static FirthNumber fth_semicolon(FirthState *pFirth)
 {
 	// mark the EXIT of this word
 	fth_write_to_cp(pFirth, 0);
@@ -677,14 +703,14 @@ static int fth_semicolon(FirthState *pFirth)
 }
 
 // implements EXIT
-static int fth_exit(FirthState *pFirth)
+static FirthNumber fth_exit(FirthState *pFirth)
 {
 	fth_write_to_cp(pFirth, 0);
 	return FTH_TRUE;
 }
 
 // implementes COMPILE - compile the words in a new colon definition
-static int fth_compile(FirthState *pFirth)
+static FirthNumber fth_compile(FirthState *pFirth)
 {
 	LOG("COMPILE");
 
@@ -747,7 +773,7 @@ static int fth_compile(FirthState *pFirth)
 				// pop the addr off the stack, convert it to a number and put back on stack
 				fth_number(pFirth);
 				FirthFloat f = fth_popf(pFirth);
-				fth_write_to_cp(pFirth, *(int*)&f);
+				fth_write_to_cp(pFirth, *(FirthNumber*)&f);
 			}
 			else
 			{
@@ -769,7 +795,7 @@ static int fth_compile(FirthState *pFirth)
 
 // implements EXECUTE - execute the xt on TOS
 // ( xt -- )
-static int fth_execute(FirthState *pFirth)
+static FirthNumber fth_execute(FirthState *pFirth)
 {
 	LOG("EXECUTE");
 
@@ -793,21 +819,8 @@ static int fth_execute(FirthState *pFirth)
 	return f(pFirth);
 }
 
-// implements CREATE
-// create a new empty dictionary entry
-static int fth_create(FirthState *pFirth)
-{
-	// get the next word in input stream
-	fth_push(pFirth, ' ');
-	fth_word(pFirth);
-
-	char *newWord = (char*)fth_pop(pFirth);
-
-	return fth_make_dict_entry(pFirth, newWord);
-}
-
 // implements INTERPRET
-static int fth_interpret(FirthState *pFirth)
+static FirthNumber fth_interpret(FirthState *pFirth)
 {
 	LOG("INTERPRET");
 
@@ -846,7 +859,7 @@ static int fth_interpret(FirthState *pFirth)
 }
 
 // implements QUIT
-static int fth_quit(FirthState *pFirth)
+static FirthNumber fth_quit(FirthState *pFirth)
 {
 	LOG("QUIT");
 
@@ -870,7 +883,7 @@ static int fth_quit(FirthState *pFirth)
 
 // implements IMMEDIATE
 // make the last word created immediate
-static int fth_immediate(FirthState *pFirth)
+static FirthNumber fth_immediate(FirthState *pFirth)
 {
 	pFirth->head->flags.immediate = 1;
 	return FTH_TRUE;
@@ -878,14 +891,14 @@ static int fth_immediate(FirthState *pFirth)
 
 // implements HIDE
 // make the last word created hidden
-static int fth_hide(FirthState *pFirth)
+static FirthNumber fth_hide(FirthState *pFirth)
 {
 	pFirth->head->flags.hidden = 1;
 	return FTH_TRUE;
 }
 
 // implements REVEAL
-static int fth_reveal(FirthState *pFirth)
+static FirthNumber fth_reveal(FirthState *pFirth)
 {
 	pFirth->head->flags.hidden = 0;
 	return FTH_TRUE;
@@ -893,7 +906,7 @@ static int fth_reveal(FirthState *pFirth)
 
 // implements CELLS
 // computes the dictionary space needed for N cells
-static int fth_cells(FirthState *pFirth)
+static FirthNumber fth_cells(FirthState *pFirth)
 {
 	FirthNumber n = fth_pop(pFirth);
 	return fth_push(pFirth, n * sizeof(FirthNumber));
@@ -901,9 +914,9 @@ static int fth_cells(FirthState *pFirth)
 
 // implements ALLOT
 // reserve N bytes in the dictionary
-static int fth_allot(FirthState *pFirth)
+static FirthNumber fth_allot(FirthState *pFirth)
 {
-	int n = fth_pop(pFirth);
+	FirthNumber n = fth_pop(pFirth);
 	pFirth->CP += n;
 
 	return FTH_TRUE;
@@ -911,7 +924,7 @@ static int fth_allot(FirthState *pFirth)
 
 // implements ']'
 // ( -- )
-static int fth_stop_compile(FirthState *pFirth)
+static FirthNumber fth_stop_compile(FirthState *pFirth)
 {
 	pFirth->compiling = 0;
 	return FTH_TRUE;
@@ -919,14 +932,14 @@ static int fth_stop_compile(FirthState *pFirth)
 
 // implements '['
 // ( -- )
-static int fth_start_compile(FirthState *pFirth)
+static FirthNumber fth_start_compile(FirthState *pFirth)
 {
 	pFirth->compiling = 1;
 	return FTH_TRUE;
 }
 
 // implements .S
-static int fth_dots(FirthState *pFirth)
+static FirthNumber fth_dots(FirthState *pFirth)
 {
 	// make a copy of the stack
 	FirthNumber *s = pFirth->SP;
@@ -946,7 +959,7 @@ static int fth_dots(FirthState *pFirth)
 
 // implements DEPTH - push the current stack size onto the stack
 // ( -- n )
-static int fth_depth(FirthState *pFirth)
+static FirthNumber fth_depth(FirthState *pFirth)
 {
 	FirthNumber depth = (pFirth->SP - pFirth->stack);
 	fth_push(pFirth, depth);
@@ -954,7 +967,7 @@ static int fth_depth(FirthState *pFirth)
 }
 
 // run-time behavior of a marker - reset dictionary state to the marker
-static int fth_marker_imp(FirthState *pFirth)
+static FirthNumber fth_marker_imp(FirthState *pFirth)
 {
 	DictionaryEntry *xt = (DictionaryEntry*)fth_pop(pFirth);
 
@@ -968,7 +981,7 @@ static int fth_marker_imp(FirthState *pFirth)
 
 // implements MARKER - create a state marker in the dictionary
 // ( -- )
-static int fth_marker(FirthState *pFirth)
+static FirthNumber fth_marker(FirthState *pFirth)
 {
 	// create a new dictionary entry for this marker
 	fth_create(pFirth);
@@ -981,7 +994,7 @@ static int fth_marker(FirthState *pFirth)
 
 // implements ','
 // ( n -- )
-static int fth_comma(FirthState *pFirth)
+static FirthNumber fth_comma(FirthState *pFirth)
 {
 	FirthNumber n = fth_pop(pFirth);
 	return fth_write_to_cp(pFirth, n);
@@ -989,7 +1002,7 @@ static int fth_comma(FirthState *pFirth)
 
 // implements BRANCH
 // ( -- )
-static int fth_branch(FirthState *pFirth)
+static FirthNumber fth_branch(FirthState *pFirth)
 {
 	// get addr
 	FirthNumber *addr = pFirth->IP;
@@ -999,7 +1012,7 @@ static int fth_branch(FirthState *pFirth)
 
 // implements BRANCH?
 // ( f -- )
-static int fth_conditional_branch(FirthState *pFirth)
+static FirthNumber fth_conditional_branch(FirthState *pFirth)
 {
 	FirthNumber n = fth_pop(pFirth);
 
@@ -1017,7 +1030,7 @@ static int fth_conditional_branch(FirthState *pFirth)
 
 // implements '('
 // ( -- )
-static int fth_left_parens(FirthState *pFirth)
+static FirthNumber fth_left_parens(FirthState *pFirth)
 {
 	fth_push(pFirth, ')');
 	fth_word(pFirth);
@@ -1026,7 +1039,7 @@ static int fth_left_parens(FirthState *pFirth)
 
 // implements '\'
 // ( -- )
-static int fth_backslash(FirthState *pFirth)
+static FirthNumber fth_backslash(FirthState *pFirth)
 {
 	fth_push(pFirth, '\n');
 	fth_word(pFirth);
@@ -1035,7 +1048,7 @@ static int fth_backslash(FirthState *pFirth)
 
 // helper for LOAD
 // ( -- )
-static int load_helper(FirthState *pFirth, char *filename)
+static FirthNumber load_helper(FirthState *pFirth, char *filename)
 {
 	FILE *f = fopen(filename, "rt");
 	if (!f)
@@ -1051,7 +1064,7 @@ static int load_helper(FirthState *pFirth, char *filename)
 
 // implements INCLUDE
 // ( -- )
-static int fth_load(FirthState *pFirth)
+static FirthNumber fth_load(FirthState *pFirth)
 {
 	char include_file[FTH_MAX_PATH];
 	
@@ -1081,7 +1094,7 @@ static int fth_load(FirthState *pFirth)
 
 // implements R>
 // (R: n -- ) ( -- n)
-static int fth_from_r(FirthState *pFirth)
+static FirthNumber fth_from_r(FirthState *pFirth)
 {
 	FirthNumber n = fth_r_pop(pFirth);
 	return fth_push(pFirth, n);
@@ -1089,7 +1102,7 @@ static int fth_from_r(FirthState *pFirth)
 
 // implements >R
 // ( n -- ) (R: -- n)
-static int fth_to_r(FirthState *pFirth)
+static FirthNumber fth_to_r(FirthState *pFirth)
 {
 	FirthNumber n = fth_pop(pFirth);
 	return fth_r_push(pFirth, n);
@@ -1097,7 +1110,7 @@ static int fth_to_r(FirthState *pFirth)
 
 // implements IF
 // ( f -- )
-static int fth_if(FirthState *pFirth)
+static FirthNumber fth_if(FirthState *pFirth)
 {
 	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "BRANCH?"));
 	fth_push(pFirth, (FirthNumber)pFirth->CP);
@@ -1108,7 +1121,7 @@ static int fth_if(FirthState *pFirth)
 
 // implements THEN
 // ( -- )
-static int fth_then(FirthState *pFirth)
+static FirthNumber fth_then(FirthState *pFirth)
 {
 	FirthNumber *addr = (FirthNumber*)fth_pop(pFirth);
 	*addr = (FirthNumber) pFirth->CP;
@@ -1118,7 +1131,7 @@ static int fth_then(FirthState *pFirth)
 
 // implements ELSE
 // ( -- )
-static int fth_else(FirthState *pFirth)
+static FirthNumber fth_else(FirthState *pFirth)
 {
 	FirthNumber *addr = (FirthNumber*)fth_pop(pFirth);
 	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "BRANCH"));
@@ -1132,7 +1145,7 @@ static int fth_else(FirthState *pFirth)
 
 // implements BEGIN
 // ( -- )
-static int fth_begin(FirthState *pFirth)
+static FirthNumber fth_begin(FirthState *pFirth)
 {
 	// push current code pointer onto the stack
 	return fth_push(pFirth, (FirthNumber)pFirth->CP);
@@ -1140,7 +1153,7 @@ static int fth_begin(FirthState *pFirth)
 
 // implements AGAIN
 // ( -- )
-static int fth_again(FirthState *pFirth)
+static FirthNumber fth_again(FirthState *pFirth)
 {
 	FirthNumber addr = fth_pop(pFirth);
 	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "BRANCH"));
@@ -1151,7 +1164,7 @@ static int fth_again(FirthState *pFirth)
 
 // implements UNTIL
 // ( f -- )
-static int fth_until(FirthState *pFirth)
+static FirthNumber fth_until(FirthState *pFirth)
 {
 	FirthNumber addr = fth_pop(pFirth);
 	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "BRANCH?"));
@@ -1162,7 +1175,7 @@ static int fth_until(FirthState *pFirth)
 
 // implements WHILE
 // ( f -- )
-static int fth_while(FirthState *pFirth)
+static FirthNumber fth_while(FirthState *pFirth)
 {
 	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "BRANCH?"));
 	fth_push(pFirth, (FirthNumber)pFirth->CP);
@@ -1173,7 +1186,7 @@ static int fth_while(FirthState *pFirth)
 
 // implements REPEAT
 // ( -- )
-static int fth_repeat(FirthState *pFirth)
+static FirthNumber fth_repeat(FirthState *pFirth)
 {
 	FirthNumber *while_addr = (FirthNumber*)fth_pop(pFirth);
 
@@ -1188,7 +1201,7 @@ static int fth_repeat(FirthState *pFirth)
 
 // implements DO
 // ( limit index -- )
-static int fth_do(FirthState *pFirth)
+static FirthNumber fth_do(FirthState *pFirth)
 {
 	// push current code pointer onto the stack
 	fth_push(pFirth, (FirthNumber)pFirth->CP);
@@ -1203,7 +1216,7 @@ static int fth_do(FirthState *pFirth)
 
 // implements LOOP
 // ( -- )
-static int fth_loop(FirthState *pFirth)
+static FirthNumber fth_loop(FirthState *pFirth)
 {
 	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "R>")); // get index from return stack
 	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "R>")); // get limit from return stack
@@ -1231,7 +1244,7 @@ static int fth_loop(FirthState *pFirth)
 
 // implements +LOOP
 // ( n -- )
-static int fth_ploop(FirthState *pFirth)
+static FirthNumber fth_ploop(FirthState *pFirth)
 {
 	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "R>")); // get index from return stack
 	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "R>")); // get limit from return stack
@@ -1261,7 +1274,7 @@ static int fth_ploop(FirthState *pFirth)
 }
 
 // implements UNLOOP
-static int fth_unloop(FirthState *pFirth)
+static FirthNumber fth_unloop(FirthState *pFirth)
 {
 	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "R>")); // get index from return stack
 	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "R>")); // get limit from return stack
@@ -1272,7 +1285,7 @@ static int fth_unloop(FirthState *pFirth)
 }
 
 // run-time behavior of (.")
-static int fth_dot_quote_imp(FirthState *pFirth)
+static FirthNumber fth_dot_quote_imp(FirthState *pFirth)
 {
 	firth_printf(pFirth, "%s", (char*)pFirth->IP);
 
@@ -1285,7 +1298,7 @@ static int fth_dot_quote_imp(FirthState *pFirth)
 }
 
 // implements ."
-static int fth_dot_quote(FirthState *pFirth)
+static FirthNumber fth_dot_quote(FirthState *pFirth)
 {
 	// get the string
 	fth_push(pFirth, '"');
@@ -1307,14 +1320,14 @@ static int fth_dot_quote(FirthState *pFirth)
 }
 
 // implements J ( -- n )
-static int fth_j(FirthState *pFirth)
+static FirthNumber fth_j(FirthState *pFirth)
 {
 	FirthNumber n = *(pFirth->RP - 3);
 	return fth_push(pFirth, n);
 }
 
 // implements POSTPONE
-static int fth_postpone(FirthState *pFirth)
+static FirthNumber fth_postpone(FirthState *pFirth)
 {
 	// get the next word
 	fth_push(pFirth, ' ');
@@ -1340,14 +1353,14 @@ static int fth_postpone(FirthState *pFirth)
 
 // implements [']
 // : ['] ( compilation: "name" --; run-time: -- xt ) ' POSTPONE literal ; immediate
-static int fth_bracket_tick(FirthState *pFirth)
+static FirthNumber fth_bracket_tick(FirthState *pFirth)
 {
 
 	return FTH_TRUE;
 }
 
 // implements RECURSE
-static int fth_recurse(FirthState *pFirth)
+static FirthNumber fth_recurse(FirthState *pFirth)
 {
 	// call the xt for the current function
 	fth_write_to_cp(pFirth, (FirthNumber)pFirth->head);
@@ -1356,7 +1369,7 @@ static int fth_recurse(FirthState *pFirth)
 }
 
 // implements
-//static int fth_xxx(FirthState *pFirth)
+//static FirthNumber fth_xxx(FirthState *pFirth)
 //{
 //
 //	return FTH_TRUE;
@@ -1534,7 +1547,7 @@ static const char *compile_only_words[] =
 //========================
 
 // allows embedders to set their own output function
-int fth_set_output_function(FirthState *pFirth, FirthOutputFunc f)
+FirthNumber fth_set_output_function(FirthState *pFirth, FirthOutputFunc f)
 {
 	pFirth->firth_print = f;
 	return FTH_TRUE;
@@ -1623,7 +1636,7 @@ FirthState *fth_create_state()
 }
 
 // C API to cleanup and free forth state
-int fth_delete_state(FirthState *pFirth)
+FirthNumber fth_delete_state(FirthState *pFirth)
 {
 	free(pFirth->dictionary_base);
 	free(pFirth);
@@ -1632,7 +1645,7 @@ int fth_delete_state(FirthState *pFirth)
 }
 
 // C API to mark the given word as hidden
-int fth_make_hidden(FirthState* pFirth, const char *word)
+FirthNumber fth_make_hidden(FirthState* pFirth, const char *word)
 {
 	DictionaryEntry *pEntry = fth_tick_internal(pFirth, word);
 	if (!pEntry)
@@ -1646,7 +1659,7 @@ int fth_make_hidden(FirthState* pFirth, const char *word)
 }
 
 // C API to mark the given word as immediate
-int fth_make_immediate(FirthState* pFirth, const char *word)
+FirthNumber fth_make_immediate(FirthState* pFirth, const char *word)
 {
 	DictionaryEntry *pEntry = fth_tick_internal(pFirth, word);
 	if (!pEntry)
@@ -1660,7 +1673,7 @@ int fth_make_immediate(FirthState* pFirth, const char *word)
 }
 
 // C API to mark the given word as compile-only
-int fth_make_compile_only(FirthState* pFirth, const char *word)
+FirthNumber fth_make_compile_only(FirthState* pFirth, const char *word)
 {
 	DictionaryEntry *pEntry = fth_tick_internal(pFirth, word);
 	if (!pEntry)
@@ -1674,7 +1687,7 @@ int fth_make_compile_only(FirthState* pFirth, const char *word)
 }
 
 // C API to mark the given word as requiring the xt on the stack
-int fth_make_xt_required(FirthState* pFirth, const char *word)
+FirthNumber fth_make_xt_required(FirthState* pFirth, const char *word)
 {
 	DictionaryEntry *pEntry = fth_tick_internal(pFirth, word);
 	if (!pEntry)
@@ -1688,7 +1701,7 @@ int fth_make_xt_required(FirthState* pFirth, const char *word)
 }
 
 // C API to register a wordset
-int fth_register_wordset(FirthState *pFirth, const FirthWordSet words[])
+FirthNumber fth_register_wordset(FirthState *pFirth, const FirthWordSet words[])
 {
 	for (int i = 0; words[i].wordName && words[i].func; i++)
 	{
@@ -1700,7 +1713,7 @@ int fth_register_wordset(FirthState *pFirth, const FirthWordSet words[])
 }
 
 // C API to push a value on the stack
-int fth_push(FirthState *pFirth, FirthNumber val)
+FirthNumber fth_push(FirthState *pFirth, FirthNumber val)
 {
 	// check for stack overflow
 	if ((pFirth->SP - pFirth->stack) + 1 > FTH_STACK_SIZE)
@@ -1733,7 +1746,7 @@ FirthNumber fth_pop(FirthState *pFirth)
 }
 
 // C API to return the TOS without removing it
-int fth_peek(FirthState *pFirth)
+FirthNumber fth_peek(FirthState *pFirth)
 {
 	if (pFirth->SP == pFirth->stack)
 	{
@@ -1745,7 +1758,7 @@ int fth_peek(FirthState *pFirth)
 }
 
 // C API for defining user constants
-int fth_define_word_const(FirthState *pFirth, const char *name, FirthNumber val)
+FirthNumber fth_define_word_const(FirthState *pFirth, const char *name, FirthNumber val)
 {
 	fth_make_dict_entry(pFirth, name);
 
@@ -1760,7 +1773,7 @@ int fth_define_word_const(FirthState *pFirth, const char *name, FirthNumber val)
 }
 
 // C API for defining user variables
-int fth_define_word_var(FirthState *pFirth, const char *name, FirthNumber *pVar)
+FirthNumber fth_define_word_var(FirthState *pFirth, const char *name, FirthNumber *pVar)
 {
 	fth_make_dict_entry(pFirth, name);
 
@@ -1776,7 +1789,7 @@ int fth_define_word_var(FirthState *pFirth, const char *name, FirthNumber *pVar)
 
 #if FTH_INCLUDE_FLOAT == 1
 // C API for defining float user constants
-int fth_define_word_fconst(FirthState *pFirth, const char *name, FirthFloat val)
+FirthNumber fth_define_word_fconst(FirthState *pFirth, const char *name, FirthFloat val)
 {
 	fth_make_dict_entry(pFirth, name);
 
@@ -1785,13 +1798,13 @@ int fth_define_word_fconst(FirthState *pFirth, const char *name, FirthFloat val)
 	pFirth->head->flags.constant = 1;
 
 	// store constant value in dictionary
-	fth_write_to_cp(pFirth, (FirthNumber)*(int*)&val);
+	fth_write_to_cp(pFirth, (FirthNumber)*(FirthNumber*)&val);
 
 	return FTH_TRUE;
 }
 
 // C API for defining user variables
-int fth_define_word_fvar(FirthState *pFirth, const char *name, FirthFloat *pVar)
+FirthNumber fth_define_word_fvar(FirthState *pFirth, const char *name, FirthFloat *pVar)
 {
 	fth_make_dict_entry(pFirth, name);
 
@@ -1807,7 +1820,7 @@ int fth_define_word_fvar(FirthState *pFirth, const char *name, FirthFloat *pVar)
 #endif
 
 // C API for the outer interpreter
-int fth_update(FirthState *pFirth)
+FirthNumber fth_update(FirthState *pFirth)
 {
 	LOG("UPDATE");
 
@@ -1815,12 +1828,12 @@ int fth_update(FirthState *pFirth)
 }
 
 // C API for parsing/compiling/executing a string of Firth
-int fth_parse_string(FirthState *pFirth, const char *str)
+FirthNumber fth_parse_string(FirthState *pFirth, const char *str)
 {
 	if (!str)
 		return FTH_FALSE;
 
-	int len = strlen(str);
+	FirthNumber len = strlen(str);
 	if (len > FTH_MAX_WORD_NAME)
 		return FTH_FALSE;
 
@@ -1833,7 +1846,7 @@ int fth_parse_string(FirthState *pFirth, const char *str)
 }
 
 // C API for executing an existing word
-int fth_exec_word(FirthState *pFirth, const char *word)
+FirthNumber fth_exec_word(FirthState *pFirth, const char *word)
 {
 	DictionaryEntry *pEntry = fth_tick_internal(pFirth, word);
 	fth_push(pFirth, (FirthNumber)pEntry);
@@ -1841,14 +1854,14 @@ int fth_exec_word(FirthState *pFirth, const char *word)
 }
 
 // C API convenience function for executing words
-int fth_exec_word1(FirthState *pFirth, const char *word, FirthNumber n) 
+FirthNumber fth_exec_word1(FirthState *pFirth, const char *word, FirthNumber n) 
 { 
 	fth_push(pFirth, n); 
 	return fth_exec_word(pFirth, word);
 }
 
 // C API convenience function for executing words
-int fth_exec_word2(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2)
+FirthNumber fth_exec_word2(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2)
 {
 	fth_push(pFirth, n1);
 	fth_push(pFirth, n2);
@@ -1856,7 +1869,7 @@ int fth_exec_word2(FirthState *pFirth, const char *word, FirthNumber n1, FirthNu
 }
 
 // C API convenience function for executing words
-int fth_exec_word3(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2, FirthNumber n3)
+FirthNumber fth_exec_word3(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2, FirthNumber n3)
 {
 	fth_push(pFirth, n1);
 	fth_push(pFirth, n2);

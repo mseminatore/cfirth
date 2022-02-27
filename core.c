@@ -4,7 +4,7 @@
 #include "firth.h"
 
 // implements BYTE
-static int fth_bye(FirthState *pFirth)
+static FirthNumber fth_bye(FirthState *pFirth)
 {
 	pFirth->halted = 1;
 
@@ -12,7 +12,7 @@ static int fth_bye(FirthState *pFirth)
 }
 
 // implements '.' - print out the TOS
-static int fth_dot(FirthState *pFirth)
+static FirthNumber fth_dot(FirthState *pFirth)
 {
 	FirthNumber n = fth_pop(pFirth);
 
@@ -25,7 +25,7 @@ static int fth_dot(FirthState *pFirth)
 }
 
 // implements WORDS
-static int fth_words(FirthState *pFirth)
+static FirthNumber fth_words(FirthState *pFirth)
 {
 	int count = 0;
 
@@ -73,7 +73,7 @@ static int fth_words(FirthState *pFirth)
 }
 
 //
-static int fth_emit(FirthState *pFirth)
+static FirthNumber fth_emit(FirthState *pFirth)
 {
 	FirthNumber n = fth_pop(pFirth);
 	firth_printf(pFirth, "%c", (char)n);
@@ -81,7 +81,7 @@ static int fth_emit(FirthState *pFirth)
 }
 
 //
-static int fth_plus(FirthState *pFirth)
+static FirthNumber fth_plus(FirthState *pFirth)
 {
 	FirthNumber b = fth_pop(pFirth);
 	FirthNumber a = fth_pop(pFirth);
@@ -89,7 +89,7 @@ static int fth_plus(FirthState *pFirth)
 }
 
 //
-static int fth_minus(FirthState *pFirth)
+static FirthNumber fth_minus(FirthState *pFirth)
 {
 	FirthNumber b = fth_pop(pFirth);
 	FirthNumber a = fth_pop(pFirth);
@@ -97,7 +97,7 @@ static int fth_minus(FirthState *pFirth)
 }
 
 //
-static int fth_mul(FirthState *pFirth)
+static FirthNumber fth_mul(FirthState *pFirth)
 {
 	FirthNumber b = fth_pop(pFirth);
 	FirthNumber a = fth_pop(pFirth);
@@ -105,7 +105,7 @@ static int fth_mul(FirthState *pFirth)
 }
 
 //
-static int fth_div(FirthState *pFirth)
+static FirthNumber fth_div(FirthState *pFirth)
 {
 	FirthNumber b = fth_pop(pFirth);
 	FirthNumber a = fth_pop(pFirth);
@@ -113,14 +113,14 @@ static int fth_div(FirthState *pFirth)
 }
 
 // fetch value at addr on TOS
-static int fth_fetch(FirthState *pFirth)
+static FirthNumber fth_fetch(FirthState *pFirth)
 {
 	FirthNumber *pInt = (FirthNumber*)fth_pop(pFirth);
 	return fth_push(pFirth, *pInt);
 }
 
 // ( n addr -- )
-static int fth_store(FirthState *pFirth)
+static FirthNumber fth_store(FirthState *pFirth)
 {
 	FirthNumber *pInt = (FirthNumber*)fth_pop(pFirth);
 	FirthNumber val = fth_pop(pFirth);
@@ -131,7 +131,7 @@ static int fth_store(FirthState *pFirth)
 }
 
 //
-static int fth_swap(FirthState *pFirth)
+static FirthNumber fth_swap(FirthState *pFirth)
 {
 	FirthNumber a = fth_pop(pFirth);
 	FirthNumber b = fth_pop(pFirth);
@@ -142,13 +142,13 @@ static int fth_swap(FirthState *pFirth)
 }
 
 // drop ( n -- )
-static int fth_drop(FirthState *pFirth)
+static FirthNumber fth_drop(FirthState *pFirth)
 {
 	return fth_pop(pFirth);
 }
 
 // dup ( n -- n n )
-static int fth_dup(FirthState *pFirth)
+static FirthNumber fth_dup(FirthState *pFirth)
 {
 	FirthNumber a = fth_pop(pFirth);
 	fth_push(pFirth, a);
@@ -157,7 +157,7 @@ static int fth_dup(FirthState *pFirth)
 }
 
 // rot (n1 n2 n3 -- n2 n3 n1)
-static int fth_rot(FirthState *pFirth)
+static FirthNumber fth_rot(FirthState *pFirth)
 {
 	FirthNumber n3 = fth_pop(pFirth);
 	FirthNumber n2 = fth_pop(pFirth);
@@ -170,7 +170,7 @@ static int fth_rot(FirthState *pFirth)
 }
 
 // over ( n1 n2 -- n1 n2 n1 )
-static int fth_over(FirthState *pFirth)
+static FirthNumber fth_over(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
@@ -181,7 +181,7 @@ static int fth_over(FirthState *pFirth)
 }
 
 //
-static int fth_equal(FirthState *pFirth)
+static FirthNumber fth_equal(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
@@ -189,7 +189,7 @@ static int fth_equal(FirthState *pFirth)
 }
 
 //
-static int fth_not_equal(FirthState *pFirth)
+static FirthNumber fth_not_equal(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
@@ -197,7 +197,7 @@ static int fth_not_equal(FirthState *pFirth)
 }
 
 //
-static int fth_greater_than(FirthState *pFirth)
+static FirthNumber fth_greater_than(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
@@ -205,7 +205,7 @@ static int fth_greater_than(FirthState *pFirth)
 }
 
 //
-static int fth_less_than(FirthState *pFirth)
+static FirthNumber fth_less_than(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
@@ -213,35 +213,35 @@ static int fth_less_than(FirthState *pFirth)
 }
 
 //
-static int fth_equal_zero(FirthState *pFirth)
+static FirthNumber fth_equal_zero(FirthState *pFirth)
 {
 	FirthNumber n = fth_pop(pFirth);
 	return fth_push(pFirth, n == 0 ? FTH_TRUE : FTH_FALSE);
 }
 
 //
-static int fth_not_equal_zero(FirthState *pFirth)
+static FirthNumber fth_not_equal_zero(FirthState *pFirth)
 {
 	FirthNumber n = fth_pop(pFirth);
 	return fth_push(pFirth, n != 0 ? FTH_TRUE : FTH_FALSE);
 }
 
 //
-static int fth_less_than_zero(FirthState *pFirth)
+static FirthNumber fth_less_than_zero(FirthState *pFirth)
 {
 	FirthNumber n = fth_pop(pFirth);
 	return fth_push(pFirth, n < 0 ? FTH_TRUE : FTH_FALSE);
 }
 
 
-static int fth_greater_than_zero(FirthState *pFirth)
+static FirthNumber fth_greater_than_zero(FirthState *pFirth)
 {
 	FirthNumber n = fth_pop(pFirth);
 	return fth_push(pFirth, n > 0 ? FTH_TRUE : FTH_FALSE);
 }
 
 //
-static int fth_and(FirthState *pFirth)
+static FirthNumber fth_and(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
@@ -249,7 +249,7 @@ static int fth_and(FirthState *pFirth)
 }
 
 //
-static int fth_or(FirthState *pFirth)
+static FirthNumber fth_or(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
@@ -257,14 +257,14 @@ static int fth_or(FirthState *pFirth)
 }
 
 //
-static int fth_not(FirthState *pFirth)
+static FirthNumber fth_not(FirthState *pFirth)
 {
 	FirthNumber n = fth_pop(pFirth);
 	return fth_push(pFirth, !n);
 }
 
 //
-static int fth_xor(FirthState *pFirth)
+static FirthNumber fth_xor(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
@@ -272,7 +272,7 @@ static int fth_xor(FirthState *pFirth)
 }
 
 //
-static int fth_mod(FirthState *pFirth)
+static FirthNumber fth_mod(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
@@ -280,7 +280,7 @@ static int fth_mod(FirthState *pFirth)
 }
 
 //
-static int fth_div_mod(FirthState *pFirth)
+static FirthNumber fth_div_mod(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
@@ -290,7 +290,7 @@ static int fth_div_mod(FirthState *pFirth)
 }
 
 //
-static int fth_mul_div(FirthState *pFirth)
+static FirthNumber fth_mul_div(FirthState *pFirth)
 {
 	FirthNumber n3 = fth_pop(pFirth);
 	FirthNumber n2 = fth_pop(pFirth);
@@ -301,7 +301,7 @@ static int fth_mul_div(FirthState *pFirth)
 }
 
 //
-static int fth_lshift(FirthState *pFirth)
+static FirthNumber fth_lshift(FirthState *pFirth)
 {
 	FirthNumber shift = fth_pop(pFirth);
 	FirthNumber num = fth_pop(pFirth);
@@ -309,7 +309,7 @@ static int fth_lshift(FirthState *pFirth)
 }
 
 //
-static int fth_rshift(FirthState *pFirth)
+static FirthNumber fth_rshift(FirthState *pFirth)
 {
 	FirthNumber shift = fth_pop(pFirth);
 	FirthNumber num = fth_pop(pFirth);
@@ -317,7 +317,7 @@ static int fth_rshift(FirthState *pFirth)
 }
 
 //
-static int fth_pow(FirthState *pFirth)
+static FirthNumber fth_pow(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
@@ -325,7 +325,7 @@ static int fth_pow(FirthState *pFirth)
 }
 
 //
-//static int fth_xxx(FirthState *pFirth)
+//static FirthNumber fth_xxx(FirthState *pFirth)
 //{
 //	FirthNumber n = fth_pop(pFirth);
 //
@@ -385,7 +385,7 @@ static const FirthWordSet core_lib[] =
 };
 
 //
-int fth_register_core_wordset(FirthState *pFirth)
+FirthNumber fth_register_core_wordset(FirthState *pFirth)
 {
 	return fth_register_wordset(pFirth, core_lib);
 }

@@ -6,7 +6,7 @@ OBJS = main.o firth.o core.o firth_float.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-cfirth: $(OBJS)
+firth: $(OBJS)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 clean:

@@ -19,7 +19,7 @@ typedef void(*FirthOutputFunc)(char*);
 
 //
 typedef struct FirthState FirthState;
-typedef int (*FirthFunc)(FirthState *pFirth);
+typedef FirthNumber (*FirthFunc)(FirthState *pFirth);
 typedef struct DictionaryEntry DictionaryEntry;
 
 //
@@ -63,7 +63,7 @@ struct FirthState
 
 	FILE *BLK;
 	InputNode input_stack[FTH_INPUT_STACK_SIZE];
-	int ISP;	// input stack pointer
+	FirthNumber ISP;	// input stack pointer
 
 	FirthNumber hexmode;
 	FirthNumber maxr;
@@ -99,38 +99,31 @@ typedef struct
 
 // Public Firth functions
 FirthState *fth_create_state();
-int fth_delete_state(FirthState*);
+FirthNumber fth_delete_state(FirthState*);
 
-int fth_tick(FirthState *pFirth);
-int fth_word(FirthState *pFirth);
-int fth_create(FirthState *pFirth);
-
-int fth_push(FirthState *pFirth, FirthNumber val);
+FirthNumber fth_push(FirthState *pFirth, FirthNumber val);
 FirthNumber fth_pop(FirthState *pFirth);
-int fth_peek(FirthState *pFirth);
+FirthNumber fth_peek(FirthState *pFirth);
 
-int fth_set_output_function(FirthState *pFirth, FirthOutputFunc f);
+FirthNumber fth_set_output_function(FirthState *pFirth, FirthOutputFunc f);
 void firth_printf(FirthState *pFirth, char *format, ...);
 
-//int fth_interpret(FirthState *pFirth);
-int fth_quit(FirthState *pFirth);
+FirthNumber fth_register_wordset(FirthState *pFirth, const FirthWordSet words[]);
+FirthNumber fth_register_core_wordset(FirthState *pFirth);
 
-int fth_register_wordset(FirthState *pFirth, const FirthWordSet words[]);
-int fth_register_core_wordset(FirthState *pFirth);
+FirthNumber fth_make_compile_only(FirthState *pFirth, const char *word);
+FirthNumber fth_make_immediate(FirthState *pFirth, const char *word);
+FirthNumber fth_make_hidden(FirthState *pFirth, const char *word);
+FirthNumber fth_make_xt_required(FirthState *pFirth, const char *word);
 
-int fth_make_compile_only(FirthState *pFirth, const char *word);
-int fth_make_immediate(FirthState *pFirth, const char *word);
-int fth_make_hidden(FirthState *pFirth, const char *word);
-int fth_make_xt_required(FirthState *pFirth, const char *word);
+FirthNumber fth_define_word_const(FirthState*, const char *name, FirthNumber val);
+FirthNumber fth_define_word_var(FirthState*, const char *name, FirthNumber *pVar);
 
-int fth_define_word_const(FirthState*, const char *name, FirthNumber val);
-int fth_define_word_var(FirthState*, const char *name, FirthNumber *pVar);
+FirthNumber fth_update(FirthState *pFirth);
 
-int fth_update(FirthState *pFirth);
-
-int fth_parse_string(FirthState *pFirth, const char *str);
-int fth_exec_word(FirthState *pFirth, const char *str);
-int fth_exec_word1(FirthState *pFirth, const char *word, FirthNumber n);
-int fth_exec_word2(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2);
-int fth_exec_word3(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2, FirthNumber n3);
+FirthNumber fth_parse_string(FirthState *pFirth, const char *str);
+FirthNumber fth_exec_word(FirthState *pFirth, const char *str);
+FirthNumber fth_exec_word1(FirthState *pFirth, const char *word, FirthNumber n);
+FirthNumber fth_exec_word2(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2);
+FirthNumber fth_exec_word3(FirthState *pFirth, const char *word, FirthNumber n1, FirthNumber n2, FirthNumber n3);
 FirthNumber *fth_get_var(FirthState *pFirth, const char *word);
