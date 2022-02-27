@@ -15,4 +15,4 @@ clean:
 check:
 	./firth ./test/core-tests.fth
 
-distcheck:
+#distcheck:
