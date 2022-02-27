@@ -1,2 +1,0 @@
-#/bin/sh
-./firth ./test/core-tests.fth

@@ -11,3 +11,8 @@ firth: $(OBJS)
 
 clean:
 	rm -f *.o *~ firth
+
+check:
+	./firth ./test/core-tests.fth
+
+distcheck:
