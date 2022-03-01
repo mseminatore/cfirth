@@ -486,6 +486,7 @@ BEGIN | start an indefinite loop | ( -- )
 BEL | emits a BEL char | ( -- )
 BL | prints a space | ( -- )
 CELLS | calculate cell count for array size | ( n -- n )
+CHAR | put the ascii value of the next character on the stack | ( -- n )
 CHARS | calculate space needed for n chars | ( n -- count )
 CONST | define a new constant | ( n -- )
 CR | print a carriage return | ( -- )
@@ -553,6 +554,7 @@ XOR | bitwise XOR | ( n1 n2 -- n3 )
 \. | print TOS | ( n -- )
 \.S | non-destructively print the stack contents | ( -- )
 \." | print the following " delimited string | ( -- )
+['] | store the execution token of the next word as a literal | ( -- )
 
 * **Note:** These are not yet implemented
 
