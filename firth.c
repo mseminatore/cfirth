@@ -1361,6 +1361,24 @@ static FirthNumber fth_postpone(FirthState *pFirth)
 // : ['] ( compilation: "name" --; run-time: -- xt ) ' POSTPONE literal ; immediate
 static FirthNumber fth_bracket_tick(FirthState *pFirth)
 {
+	// get the next word
+	fth_push(pFirth, ' ');
+	fth_word(pFirth);
+
+	// find the word in the dictionary
+	char *word= (char*)fth_pop(pFirth);
+	DictionaryEntry *pDict = fth_tick_internal(pFirth, word);
+	if (!pDict)
+	{
+		// word not found!
+		pFirth->firth_print(word);
+		pFirth->firth_print(" word not found!\n");
+		return FTH_FALSE;
+	}
+
+	// compile the xt into the new word as a LITERAL 
+	fth_write_to_cp(pFirth, (FirthNumber)fth_tick_internal(pFirth, "LITERAL"));
+	fth_write_to_cp(pFirth, (FirthNumber)pDict);
 
 	return FTH_TRUE;
 }
@@ -1370,6 +1388,20 @@ static FirthNumber fth_recurse(FirthState *pFirth)
 {
 	// call the xt for the current function
 	fth_write_to_cp(pFirth, (FirthNumber)pFirth->head);
+
+	return FTH_TRUE;
+}
+
+// implements CHAR
+static FirthNumber fth_char(FirthState *pFirth)
+{
+	// get the next word
+	fth_push(pFirth, ' ');
+	fth_word(pFirth);
+
+	// find the word in the dictionary
+	char *word = (char*)fth_pop(pFirth);
+	fth_push(pFirth, word[0]);
 
 	return FTH_TRUE;
 }
@@ -1387,6 +1419,14 @@ static FirthNumber fth_recurse(FirthState *pFirth)
 //
 static const FirthWordSet basic_lib[] =
 {
+	{ "[']", fth_bracket_tick },
+	{ "'", fth_tick },
+	{ ",", fth_comma },
+	{ "[", fth_stop_compile },
+	{ "]", fth_start_compile },
+
+	{ "CHAR", fth_char },
+
 	{ "RECURSE", fth_recurse },
 	{ "BEGIN", fth_begin },
 	{ "AGAIN", fth_again },
@@ -1446,16 +1486,12 @@ static const FirthWordSet basic_lib[] =
 	{ "MARKER", fth_marker },
 	{ "QUIT", fth_quit},
 	{ "NUMBER", fth_number },
-	{ "'", fth_tick },
-	{ ",", fth_comma },
 	{ "WORD", fth_word },
 
 	{ "COMPILE", fth_compile },
 	{ "INTERPRET", fth_interpret },
 	{ "IMMEDIATE", fth_immediate },
 	{ "HIDE", fth_hide },
-	{ "[", fth_stop_compile },
-	{ "]", fth_start_compile },
 
 	// defining and related words
 	{ "CREATE", fth_create },
@@ -1489,6 +1525,7 @@ static const FirthWordSet basic_lib[] =
 // list of words that are IMMEDIATE
 static const char *immediate_words[] =
 {
+	"[']",
 	";",
 	"[",
 	"(",
@@ -1520,6 +1557,7 @@ static const char *immediate_words[] =
 // list of words that are compile-only
 static const char *compile_only_words[] =
 {
+	"[']",
 	";",
 	"LITERAL",
 	"BRANCH",

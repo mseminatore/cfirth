@@ -16,6 +16,9 @@
 : NEWLINE CR LF ;
 : ESC 27 EMIT ;
 
+\ print value at addr ( addr -- ) 
+: ? @ . ;
+
 \ toggles for hex/decimal output
 : HEX 1 ENV.HEX ! ;
 : DECIMAL 0 ENV.HEX ! ;

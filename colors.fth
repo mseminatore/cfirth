@@ -3,6 +3,10 @@
 
 \ screen control
 : TERM.CLEAR ESC ." [2J" ESC ." [H" ;
+: PAGE TERM.CLEAR ;
+
+\ not quite working yet, need to remove spaces
+: AT-XY ESC ." [" . 59 EMIT . 72 EMIT ;
 
 \ text colors
 : TERM.RESET ESC ." [0m" ;
