@@ -9,7 +9,7 @@ Its goals are to be small, fast and efficient, portable and embeddable.
 
 The latest release build executable version of Firth is just **37 kilobytes**
 in size. The debug build is only 73 kilobytes. That is small for a compiler 
-and an interpreter with over 170 built-in library functions!
+and an interpreter with over 189 built-in library functions!
 
 ## How fast and efficient is Firth?
 
