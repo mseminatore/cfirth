@@ -84,6 +84,12 @@ int main(int argc, char *argv[])
 	if (argc > 1)
 	{
 		fth_load_file(pFirth, argv[1]);
+
+		// process file until done
+		while (pFirth->BLK != stdin)
+			fth_update(pFirth);
+
+		return 0;
 	}
 
 	// REPL loop
