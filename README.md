@@ -21,8 +21,8 @@ at startup.
 ## How portable is Firth?
 
 The Firth codebase builds and runs in both 32-bit and 64-bit environments. It
-is built regularly on Windows, Mac OSX and Linux. It is also regularly tested
-on Windows and Mac OSX with Linux testing in progress.
+is built and tested regularly using Continuous Integration on Windows, 
+Mac OSX and Linux.
 
 ## How embeddable is Firth?
 
