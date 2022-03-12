@@ -272,4 +272,9 @@ Test-group
     ." Test ERASE " CR
     -1 foo !
     T{ foo 1 CELLS ERASE foo @ }T 0 ==
+
+    ." Test ['] " CR
+    : GT1 123 ;
+    : GT2 ['] GT1 ; IMMEDIATE
+    T{ GT2 EXECUTE }T 123 ==
 Test-end
