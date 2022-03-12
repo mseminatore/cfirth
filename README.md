@@ -270,8 +270,9 @@ tests are also found in the **test** sub-folder in a file called
 > But even more importantly, having a rich set of unit tests allowed me to 
 > re-factor and optimize code with confidence.
 
-The *core-tests.fth* file both defines and runs the unit tests. If all goes well a message will be 
-displayed saying that *All tests passed!*
+The *core-tests.fth* file both defines and runs the unit tests. If all goes 
+well a message will be displayed saying that *All tests passed!*. At this time
+there are more than 142 individual test cases.
 
 ```Forth
 Firth> include test\core-tests.fth
