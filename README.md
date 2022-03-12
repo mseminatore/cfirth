@@ -9,7 +9,7 @@ Its goals are to be small, fast and efficient, portable and embeddable.
 
 The latest release build executable version of Firth is just **37 kilobytes**
 in size. The debug build is only 73 kilobytes. That is small for a compiler 
-and an interpreter with over 189 built-in library functions!
+and an interpreter with over 192 built-in library functions!
 
 ## How fast and efficient is Firth?
 
@@ -484,22 +484,24 @@ ALLOC | synonym for ALLOT
 AND | bitwise AND | ( n1 n2 -- n3 )
 BEGIN | start an indefinite loop | ( -- )
 BEL | emits a BEL char | ( -- )
-BL | prints a space | ( -- )
+BL | put a space on the stack | ( -- sp )
 CELLS | calculate cell count for array size | ( n -- n )
 CHAR | put the ascii value of the next character on the stack | ( -- n )
 CHARS | calculate space needed for n chars | ( n -- count )
 CONST | define a new constant | ( n -- )
 CR | print a carriage return | ( -- )
 DEPTH | put current depth of stack on data stack | ( -- n )
-DO | start a definite loop | ( -- )
+DO | start a definite loop | ( limit index -- )
 DROP | discard TOS | ( n -- )
 DUP | duplicate TOS | ( n -- n n )
 ELSE | start of else clause | ( -- )
 EMIT | print TOS as ASCII | ( n -- )
 ENDIF | synonym for THEN
+ERASE | set count chars to zero at addr | ( addr count -- )
 EXIT | exit from current loop | ( -- )
 FALSE | constant representing logical false | ( -- f )
-FOR | synonym for DO
+FILL | fill count chars with char at addr | ( addr count char -- )
+FOR | synonym for DO | ( limit index  -- )
 FUNC | begin definition of new word | ( -- )
 I | put current loop index on the stack | ( -- n )
 INCLUDE | load and parse the given Firth file | ( -- )

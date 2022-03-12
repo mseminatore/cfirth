@@ -1417,6 +1417,19 @@ static FirthNumber fth_erase(FirthState *pFirth)
 	return FTH_TRUE;
 }
 
+
+// implements
+static FirthNumber fth_fill(FirthState *pFirth)
+{
+	FirthNumber chr = fth_pop(pFirth);
+	FirthNumber count = fth_pop(pFirth);
+	FirthNumber *addr = (FirthNumber *)fth_pop(pFirth);
+
+	memset(addr, chr, count);
+
+	return FTH_TRUE;
+}
+
 // implements
 //static FirthNumber fth_xxx(FirthState *pFirth)
 //{
@@ -1531,6 +1544,7 @@ static const FirthWordSet basic_lib[] =
 	{ "\\", fth_backslash },
 	
 	{ "ERASE", fth_erase },
+	{ "FILL", fth_fill },
 
 	{ NULL, NULL }
 };
