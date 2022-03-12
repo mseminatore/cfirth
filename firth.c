@@ -1425,7 +1425,7 @@ static FirthNumber fth_fill(FirthState *pFirth)
 	FirthNumber count = fth_pop(pFirth);
 	FirthNumber *addr = (FirthNumber *)fth_pop(pFirth);
 
-	memset(addr, chr, count);
+	memset(addr, (int)chr, count);
 
 	return FTH_TRUE;
 }

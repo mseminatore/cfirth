@@ -264,4 +264,12 @@ Test-group
     T{ 5 GI9 }T 10 ==
     T{ 0 GI9 }T 10 ==
 
+    ." Test FILL " CR
+    var foo
+    T{ foo 1 CELLS 255 FILL foo @ }T -1 ==
+    T{ foo 1 CELLS 0 FILL foo @ }T 0 ==
+
+    ." Test ERASE " CR
+    -1 foo !
+    T{ foo 1 CELLS ERASE foo @ }T 0 ==
 Test-end
