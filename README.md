@@ -14,7 +14,7 @@ and an interpreter with over 192 built-in library functions!
 ## How fast and efficient is Firth?
 
 There are **zero** memory allocations in Firth (compilation or execution)
-after initializeing the run-time. All memory, including the stacks, 
+after initializing the run-time. All memory, including the stacks, 
 dictionary, etc. is acquired through a single memory allocation once 
 at startup.
 
@@ -94,7 +94,7 @@ contents of the stack.
 
 ### Words
 
-`Words` are really just another name for functions. In **Firth** it is very easy to create new 
+`Words` are simply another name for functions. In **Firth** it is very easy to create new 
 `Words`. Let's create a `Word` for addition. To do so looks like this:
 
 ```Forth
