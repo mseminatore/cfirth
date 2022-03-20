@@ -8,12 +8,12 @@ Its goals are to be small, fast and efficient, portable, and embeddable.
 ## How small is Firth?
 
 The latest release build executable version of Firth is just **37 kilobytes**
-in size. The debug build is only 73 kilobytes. That is small for a compiler 
+in size. The debug build is only **73 kilobytes**. That is small for a compiler 
 and an interpreter with over 192 built-in library functions!
 
 ## How fast and efficient is Firth?
 
-There are **zero** memory allocations in Firth (compilation or execution)
+There are **ZERO** heap memory allocations in Firth (compilation or execution)
 after initializing the run-time. All memory, including the stacks, 
 dictionary, etc. is acquired through a single memory allocation once 
 at startup.
@@ -26,11 +26,12 @@ Mac OSX and Linux.
 
 ## How embeddable is Firth?
 
-Embedding Firth is as easy as including just a few .C files and calling a few
-initialization functions. You can see some examples [here](#embedding-firth). 
-Firth can access native variables and call into native C functions. The host 
-app can read/write Firth constants and variables and execute code written 
-in Firth.
+I believe that embedding a scripting language should be easy. LUA does this
+well and was the inspiration for the API design. Embedding Firth is as easy 
+as including just a few .C files and callinga few initialization functions. 
+You can see some examples [here](#embedding-firth). Firth can access native 
+variables and call into native C functions. The host app can read/write Firth 
+constants and variables and execute code written in Firth.
 
 ## Firth Overview
 
