@@ -3,7 +3,7 @@
 
 # Welcome to C Firth!
 **Firth** is an experimental programming language heavily inspired by Forth.
-Its goals are to be small, fast and efficient, portable and embeddable.
+Its goals are to be small, fast and efficient, portable, and embeddable.
 
 ## How small is Firth?
 
