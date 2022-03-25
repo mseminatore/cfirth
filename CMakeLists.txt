@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-# set the project name
-project(firth)
+# set the project name and version
+project(firth VERSION 1.0)
 
 # add the includes
 include_directories(${PROJECT_SOURCE_DIR})
