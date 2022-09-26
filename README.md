@@ -28,7 +28,7 @@ Mac OSX and Linux.
 
 I believe that embedding a scripting language should be easy. LUA does this
 well and was the inspiration for the API design. Embedding Firth is as easy 
-as including just a few .C files and callinga few initialization functions. 
+as including just a few .C files and calling some initialization functions. 
 You can see some examples [here](#embedding-firth). Firth can access native 
 variables and call into native C functions. The host app can read/write Firth 
 constants and variables and execute code written in Firth.
