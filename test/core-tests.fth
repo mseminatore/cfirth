@@ -277,4 +277,54 @@ Test-group
     : GT1 123 ;
     : GT2 ['] GT1 ; IMMEDIATE
     T{ GT2 EXECUTE }T 123 ==
+
+    ." Test / div by zero " CR
+    T{ 1 0 / }T ==
+    T{ 3 0 MOD }T ==
+    T{ 3 0 /MOD }T ==
+    T{ 5 2 0 */ }T ==
+
+    ." Test F+ " CR
+    T{ 1.0 2.0 F+ 3.0 F= }T -1 ==
+    T{ 0.5 0.5 F+ 1.0 F= }T -1 ==
+
+    ." Test F- " CR
+    T{ 3.0 1.0 F- 2.0 F= }T -1 ==
+    T{ 5.0 3.0 F- 2.0 F= }T -1 ==
+
+    ." Test F* " CR
+    T{ 2.0 3.0 F* 6.0 F= }T -1 ==
+    T{ 4.0 2.0 F* 8.0 F= }T -1 ==
+
+    ." Test F/ " CR
+    T{ 6.0 2.0 F/ 3.0 F= }T -1 ==
+    T{ 1.0 4.0 F/ 0.25 F= }T -1 ==
+
+    ." Test FDUP " CR
+    T{ 2.0 FDUP F= }T -1 ==
+
+    ." Test FDROP " CR
+    T{ 1.0 2.0 FDROP 1.0 F= }T -1 ==
+
+    ." Test FSWAP " CR
+    T{ 1.0 2.0 FSWAP F- 1.0 F= }T -1 ==
+
+    ." Test FDEPTH " CR
+    T{ FDEPTH }T 0 ==
+    T{ 1.0 FDEPTH FDROP }T 1 ==
+
+    ." Test F< " CR
+    T{ 1.0 2.0 F< }T -1 ==
+    T{ 2.0 1.0 F< }T 0 ==
+    T{ 1.0 1.0 F< }T 0 ==
+
+    ." Test F> " CR
+    T{ 2.0 1.0 F> }T -1 ==
+    T{ 1.0 2.0 F> }T 0 ==
+    T{ 1.0 1.0 F> }T 0 ==
+
+    ." Test F= " CR
+    T{ 1.0 1.0 F= }T -1 ==
+    T{ 1.0 2.0 F= }T 0 ==
+
 Test-end

@@ -5,9 +5,9 @@
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include <assert.h>
+#include <errno.h>
 
-#if defined(_WIN32) | defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 #	include <direct.h>
 #	define CHDIR _chdir
 #	define GETCWD _getcwd
@@ -26,7 +26,7 @@
 #if FTH_CASE_SENSITIVE == 1
 #	define STRING_COMPARE strcmp
 #else
-	#if defined(_WIN32) | defined(_WIN64)
+	#if defined(_WIN32) || defined(_WIN64)
 	#	define STRING_COMPARE _stricmp
 	#else
 	#	define STRING_COMPARE strcasecmp
@@ -58,7 +58,7 @@ void firth_printf(FirthState *pFirth, char *format, ...)
 	va_list valist;
 
 	va_start(valist, format);
-	vsprintf(buf, format, valist);
+	vsnprintf(buf, FTH_MAX_PRINTF_SIZE, format, valist);
 	va_end(valist);
 
 	pFirth->firth_print(buf);
@@ -68,6 +68,10 @@ void firth_printf(FirthState *pFirth, char *format, ...)
 static FirthNumber isInteger(const char *s)
 {
 	if (*s != '-' && *s != '+' && !isdigit(*s))
+		return FTH_FALSE;
+
+	// bare '+' or '-' with no following digit is not an integer
+	if ((*s == '-' || *s == '+') && !isdigit(*(s + 1)))
 		return FTH_FALSE;
 
 	s++;
@@ -206,9 +210,14 @@ static FirthNumber fth_push_file(FirthState *pFirth, FILE *f, const char *filena
 	}
 
 	// save current working dir
-	GETCWD(oldWorkingDir, sizeof(oldWorkingDir));
+	if (!GETCWD(oldWorkingDir, sizeof(oldWorkingDir)))
+	{
+		pFirth->firth_print("Error: could not get current working directory\n");
+		return FTH_FALSE;
+	}
 
-	strcpy(path, filename);
+	strncpy(path, filename, FTH_MAX_PATH - 1);
+	path[FTH_MAX_PATH - 1] = '\0';
 
 	const char *file = fth_basename(path);
 	const char *dir = fth_dirname(path);
@@ -218,7 +227,8 @@ static FirthNumber fth_push_file(FirthState *pFirth, FILE *f, const char *filena
 		CHDIR(dir);
 
 	pFirth->input_stack[pFirth->ISP].fd = f;
-	strcpy(pFirth->input_stack[pFirth->ISP++].dirname, oldWorkingDir);
+	strncpy(pFirth->input_stack[pFirth->ISP++].dirname, oldWorkingDir, FTH_MAX_PATH - 1);
+	pFirth->input_stack[pFirth->ISP - 1].dirname[FTH_MAX_PATH - 1] = '\0';
 	pFirth->BLK = f;
 
 	return FTH_TRUE;
@@ -347,8 +357,16 @@ static FirthNumber fth_make_dict_entry(FirthState *pFirth, const char *word)
 	pNewHead->flags.variable = 0;
 	pNewHead->flags.unused = 0;
 
-	pNewHead->name_len = (BYTE)(strlen(word) + 1);	// +1 to allow for null terminator
-	strcpy(pNewHead->name, word);
+	// BYTE name_len can hold at most 255; reject names that would overflow it
+	size_t word_len = strlen(word);
+	if (word_len > 254)
+	{
+		firth_printf(pFirth, "Error: word name too long (%s)\n", word);
+		return FTH_FALSE;
+	}
+
+	pNewHead->name_len = (BYTE)(word_len + 1);	// +1 to allow for null terminator
+	strncpy(pNewHead->name, word, word_len + 1);
 
 	pFirth->head = pNewHead;
 	pFirth->CP += sizeof(DictionaryEntry) + pFirth->head->name_len + 1;
@@ -535,7 +553,11 @@ static FirthNumber fth_number(FirthState *pFirth)
 	char *input = (char*)fth_peek(pFirth);
 	if (isInteger(input))
 	{
-		FirthNumber n = atoi(input);
+		char *end;
+		errno = 0;
+		FirthNumber n = (FirthNumber)strtol(input, &end, 10);
+		if (errno != 0 || end == input)
+			return FTH_FALSE;
 		fth_pop(pFirth);
 
 		return fth_push(pFirth, n);
@@ -868,7 +890,11 @@ static FirthNumber fth_quit(FirthState *pFirth)
 		pFirth->firth_print("firth>");
 
 	// TODO - reset return stacks?
-	assert(pFirth->RP == pFirth->return_stack);
+	if (pFirth->RP != pFirth->return_stack)
+	{
+		firth_printf(pFirth, "Warning: return stack imbalance detected\n");
+		pFirth->RP = pFirth->return_stack;
+	}
 
 	// fill input bufer
 	fth_fill_tib(pFirth);
@@ -1068,7 +1094,7 @@ static FirthNumber load_file(FirthState *pFirth, const char *filename)
 	char include_file[FTH_MAX_PATH];
 
 	// see if filename was already loaded
-	sprintf(include_file, "include-%s", filename);
+	snprintf(include_file, FTH_MAX_PATH, "include-%s", filename);
 	DictionaryEntry *pEntry = fth_tick_internal(pFirth, include_file);
 
 	if (pEntry)
@@ -1662,7 +1688,7 @@ FirthState *fth_create_state()
 	pFirth->maxs = 0;
 
 	pFirth->input_stack[0].fd = stdin;
-	strcpy(pFirth->input_stack[0].dirname, ".");
+	strncpy(pFirth->input_stack[0].dirname, ".", FTH_MAX_PATH - 1);
 	pFirth->ISP = 0;
 	pFirth->BLK = pFirth->input_stack[pFirth->ISP++].fd;
 
@@ -1916,10 +1942,11 @@ FirthNumber fth_parse_string(FirthState *pFirth, const char *str)
 		return FTH_FALSE;
 
 	FirthNumber len = strlen(str);
-	if (len > FTH_MAX_WORD_NAME)
+	if (len >= FTH_MAX_WORD_NAME)
 		return FTH_FALSE;
 
-	strcpy(pFirth->TIB, str);
+	strncpy(pFirth->TIB, str, FTH_MAX_WORD_NAME - 1);
+	pFirth->TIB[FTH_MAX_WORD_NAME - 1] = '\0';
 	pFirth->tib_len = len;
 
 	fth_interpret(pFirth);
@@ -1931,6 +1958,7 @@ FirthNumber fth_parse_string(FirthState *pFirth, const char *str)
 FirthNumber fth_exec_word(FirthState *pFirth, const char *word)
 {
 	DictionaryEntry *pEntry = fth_tick_internal(pFirth, word);
+	if (!pEntry) { firth_printf(pFirth, "Error: undefined word '%s'\n", word); return FTH_FALSE; }
 	fth_push(pFirth, (FirthNumber)pEntry);
 	return fth_execute(pFirth);
 }

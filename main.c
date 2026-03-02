@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-#if defined(_WIN32) | defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 #	include <Windows.h>
 #endif
 
@@ -42,7 +42,7 @@ void banner(FirthState *pFirth)
 //
 int setupConsole()
 {
-#if defined(_WIN32) | defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 	// Set output mode to handle virtual terminal sequences
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (hOut == INVALID_HANDLE_VALUE)

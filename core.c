@@ -109,6 +109,7 @@ static FirthNumber fth_div(FirthState *pFirth)
 {
 	FirthNumber b = fth_pop(pFirth);
 	FirthNumber a = fth_pop(pFirth);
+	if (b == 0) { firth_printf(pFirth, "Error: division by zero\n"); return FTH_FALSE; }
 	return fth_push(pFirth, a / b);
 }
 
@@ -276,6 +277,7 @@ static FirthNumber fth_mod(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
+	if (n2 == 0) { firth_printf(pFirth, "Error: division by zero\n"); return FTH_FALSE; }
 	return fth_push(pFirth, n1 % n2);
 }
 
@@ -284,7 +286,7 @@ static FirthNumber fth_div_mod(FirthState *pFirth)
 {
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
-
+	if (n2 == 0) { firth_printf(pFirth, "Error: division by zero\n"); return FTH_FALSE; }
 	fth_push(pFirth, n1 % n2); // push rem
 	return fth_push(pFirth, n1 / n2); // push quotient
 }
@@ -295,7 +297,7 @@ static FirthNumber fth_mul_div(FirthState *pFirth)
 	FirthNumber n3 = fth_pop(pFirth);
 	FirthNumber n2 = fth_pop(pFirth);
 	FirthNumber n1 = fth_pop(pFirth);
-
+	if (n3 == 0) { firth_printf(pFirth, "Error: division by zero\n"); return FTH_FALSE; }
 	long long n4 = (long long)(n1) * n2;
 	return fth_push(pFirth, (FirthNumber)(n4 / n3));
 }
@@ -305,6 +307,8 @@ static FirthNumber fth_lshift(FirthState *pFirth)
 {
 	FirthNumber shift = fth_pop(pFirth);
 	FirthNumber num = fth_pop(pFirth);
+	if (shift < 0 || shift >= (FirthNumber)(sizeof(FirthNumber) * 8))
+		return fth_push(pFirth, 0);
 	return fth_push(pFirth, num << shift);
 }
 
@@ -313,6 +317,8 @@ static FirthNumber fth_rshift(FirthState *pFirth)
 {
 	FirthNumber shift = fth_pop(pFirth);
 	FirthNumber num = fth_pop(pFirth);
+	if (shift < 0 || shift >= (FirthNumber)(sizeof(FirthNumber) * 8))
+		return fth_push(pFirth, 0);
 	return fth_push(pFirth, num >> shift);
 }
 

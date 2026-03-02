@@ -516,7 +516,7 @@ MAX | leave greater of top two stack entries | ( n1 n2 -- n1|n2 )
 MAX-INT | puts largest representable int value on stack | ( -- n )
 MIN | leave lesser of top two stack entries | ( n1 n2 -- n1|n2 )
 MIN-INT | puts smallest representable int value on stack | ( -- n )
-MOD | compute remainder | ( n1 n2 -- n3 )
+MOD | compute remainder | ( n1 n2 -- n3 ) — prints error and halts if n2 is 0
 NEGATE | change sign of TOS | ( n -- -n )
 NIP | discard the second entry on stack | ( n1 n2 -- n2 )
 NOT | bitwise NOT | ( n1 n2 -- n3 )
@@ -544,9 +544,9 @@ XOR | bitwise XOR | ( n1 n2 -- n3 )
 \+ | addition | ( n1 n2 -- n3 )
 \- | subtraction | ( n1 n2 -- n3 )
 \* | multiplcation | ( n1 n2 -- n3 )
-/ | division | ( n1 n2 -- n3 )
-\*/ | multiply then divide | ( n1 n2 n3 -- n4 )
-/MOD | remainder and quotient | ( n1 n2 -- n3 n4 )
+/ | division | ( n1 n2 -- n3 ) — prints error and halts if n2 is 0
+\*/ | multiply then divide | ( n1 n2 n3 -- n4 ) — prints error and halts if n3 is 0
+/MOD | remainder and quotient | ( n1 n2 -- n3 n4 ) — prints error and halts if n2 is 0
 < | less than comparison | ( n1 n2 -- f )
 \> | greater than comparison | ( n1 n2 -- f )
 = | equivalence comparison | ( n1 n2 -- f )

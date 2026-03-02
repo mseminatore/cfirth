@@ -54,7 +54,7 @@ static FirthNumber fsub(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	FirthFloat b = fth_popf(pFirth);
-	fth_pushf(pFirth, a - b);
+	fth_pushf(pFirth, b - a);
 
 	return FTH_TRUE;
 }
@@ -73,7 +73,8 @@ static FirthNumber fdiv(FirthState *pFirth)
 {
 	FirthFloat a = fth_popf(pFirth);
 	FirthFloat b = fth_popf(pFirth);
-	fth_pushf(pFirth, a / b);
+	if (a == 0.0) { firth_printf(pFirth, "Error: float division by zero\n"); return FTH_FALSE; }
+	fth_pushf(pFirth, b / a);
 
 	return FTH_TRUE;
 }
